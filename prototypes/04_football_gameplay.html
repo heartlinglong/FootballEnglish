@@ -1,0 +1,197 @@
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+    :root {
+        --stadium-green: #2d5a27;
+        --stadium-grass-light: #3a7532;
+        --primary-glow: #6af425;
+    }
+    .stadium-perspective {
+        perspective: 1000px;
+    }
+    .football-field {
+        transform: rotateX(60deg);
+        transform-origin: bottom;
+        background: repeating-linear-gradient(
+            0deg,
+            var(--stadium-green),
+            var(--stadium-green) 100px,
+            var(--stadium-grass-light) 100px,
+            var(--stadium-grass-light) 200px
+        );
+    }
+    .orb-glow {
+        box-shadow: 0 0 30px var(--primary-glow), inset 0 0 20px rgba(255,255,255,0.8);
+    }
+    .glass-hud {
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .energy-bar-vertical {
+        background: linear-gradient(to top, #162210, #6af425);
+    }
+</style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6af425",
+                        "stadium-dark": "#0a1a05",
+                    },
+                    fontFamily: {
+                        "display": ["Be Vietnam Pro", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>Football English Town - FIFA Style Gameplay</title>
+</head>
+<body class="bg-black font-display overflow-hidden select-none">
+<div class="relative h-screen w-full overflow-hidden flex flex-col items-center">
+<div class="absolute inset-0 z-0">
+<div class="absolute inset-0 bg-gradient-to-b from-blue-400 to-blue-200">
+<div class="absolute top-10 left-10 flex gap-2">
+<div class="w-16 h-8 bg-white/80 rounded-sm shadow-[0_0_20px_white]"></div>
+<div class="w-16 h-8 bg-white/80 rounded-sm shadow-[0_0_20px_white]"></div>
+</div>
+<div class="absolute top-10 right-10 flex gap-2">
+<div class="w-16 h-8 bg-white/80 rounded-sm shadow-[0_0_20px_white]"></div>
+<div class="w-16 h-8 bg-white/80 rounded-sm shadow-[0_0_20px_white]"></div>
+</div>
+</div>
+<div class="absolute top-1/4 w-full h-1/2 bg-slate-800 skew-y-0 flex items-end">
+<div class="w-full h-32 bg-gradient-to-t from-black/40 to-transparent flex justify-around px-20">
+<div class="w-full grid grid-cols-12 gap-1 opacity-40">
+<div class="h-full bg-red-500"></div><div class="h-full bg-blue-500"></div><div class="h-full bg-yellow-500"></div>
+<div class="h-full bg-red-500"></div><div class="h-full bg-blue-500"></div><div class="h-full bg-yellow-500"></div>
+<div class="h-full bg-red-500"></div><div class="h-full bg-blue-500"></div><div class="h-full bg-yellow-500"></div>
+<div class="h-full bg-red-500"></div><div class="h-full bg-blue-500"></div><div class="h-full bg-yellow-500"></div>
+</div>
+</div>
+</div>
+<div class="absolute inset-x-0 bottom-0 h-2/3 stadium-perspective">
+<div class="football-field absolute inset-0 w-[200%] -left-1/2 h-[150%]">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[200px] border-4 border-white/50"></div>
+<div class="absolute top-[200px] left-1/2 -translate-x-1/2 w-[100px] h-[50px] border-b-4 border-white/50 rounded-full"></div>
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-full bg-white/10"></div>
+</div>
+</div>
+<div class="absolute top-[28%] left-1/2 -translate-x-1/2 w-64 h-32 border-4 border-white/80 z-10 flex">
+<div class="absolute inset-0 bg-white/10" style="background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 8px 8px; opacity: 0.3;"></div>
+<div class="absolute -bottom-1 w-full h-1 bg-white/50"></div>
+</div>
+</div>
+<div class="relative z-10 w-full h-full">
+<div class="absolute top-[35%] left-[30%] -translate-x-1/2 flex flex-col items-center">
+<div class="size-16 rounded-full bg-blue-400/80 orb-glow flex items-center justify-center border-2 border-white/50">
+<span class="text-white font-bold text-lg">小狗</span>
+</div>
+<div class="w-12 h-3 bg-black/30 rounded-full blur-sm mt-2"></div>
+</div>
+<div class="absolute top-[40%] right-[25%] flex flex-col items-center">
+<div class="size-16 rounded-full bg-yellow-400/80 orb-glow flex items-center justify-center border-2 border-white/50">
+<span class="text-white font-bold text-lg">小鹅</span>
+</div>
+<div class="w-12 h-3 bg-black/30 rounded-full blur-sm mt-2"></div>
+</div>
+<div class="absolute top-[45%] left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
+<div class="size-32 rounded-full bg-primary/90 orb-glow flex items-center justify-center border-4 border-white ring-8 ring-primary/20 scale-110">
+<span class="text-slate-900 font-black text-3xl">熊猫</span>
+</div>
+<div class="mt-8 glass-hud px-8 py-3 rounded-2xl flex flex-col items-center gap-2 border border-primary/50">
+<p class="text-white font-bold text-lg">请说出: <span class="text-primary">熊猫</span> 的英语是?</p>
+<div class="flex items-center gap-1 h-6">
+<div class="w-1 h-3 bg-primary rounded-full animate-pulse"></div>
+<div class="w-1 h-5 bg-primary rounded-full animate-pulse"></div>
+<div class="w-1 h-2 bg-primary rounded-full animate-pulse"></div>
+<div class="w-1 h-6 bg-primary rounded-full animate-pulse"></div>
+<div class="w-1 h-4 bg-primary rounded-full animate-pulse"></div>
+</div>
+</div>
+<div class="w-24 h-6 bg-black/40 rounded-full blur-md mt-4"></div>
+</div>
+<div class="absolute bottom-[10%] left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
+<div class="relative group">
+<img alt="Character behind view" class="w-64 h-64 object-contain drop-shadow-2xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvlqOmHkeYlTZ_RmUoFuBOgA7PlU16RompVz4wZ4aGUx1LmI6YCrStBG3r7-9oFHJW199lIBJn16C5tleY-2HX7NuYiVLqm_DiaEvyHqP6QM7U0RV_a1_78PPle7Dc9mXpHtAdMStD_1vBG4hmszMdhAXty7xUNWKR5pS4xCj4KvDTYS_Wk-1c8kOVimcVCwVqRQaMga9VNYtypMPE-F85H2NJLf4oX8ViFArKG969UiOcwsYqE_RkiTdJ9ux5ik-3-xZ-rAa_8vc"/>
+<div class="absolute top-[45%] left-1/2 -translate-x-1/2 text-white font-black text-4xl opacity-80 drop-shadow-md">58</div>
+<div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-48 h-12 bg-black/40 rounded-full blur-xl"></div>
+<div class="absolute -bottom-2 right-4">
+<img alt="Football" class="w-20 h-20 drop-shadow-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXSVxV49BBzlCLzF3tmRcZaUA-EyZN1jmG0j2J-VW1mFbPuaqQatvFw9o9QJ9nz2BuuQmEVE2GyfGzm0Fgo1pc4aHQE6gM5QN7wQuoxGVHPw_eYm0Aw15F4mH4iEtlbBDoGjrf_nVY2Ai5PxBa3Yu1-aLLlDcJRNVI6PZkuk5wUXRwR36bH9pir-iO83DPjQTwjBhDcBK9oqyiUeO9vtM2V-bE-JX_J5CNFIkciF8wgoTXLWYZ_yw05D7dDnthopL6siBZHTRIiKU"/>
+</div>
+</div>
+</div>
+</div>
+<div class="absolute inset-0 z-40 pointer-events-none">
+<div class="p-8 flex justify-between items-start">
+<div class="glass-hud p-4 rounded-2xl flex items-center gap-3 border-l-4 border-l-primary">
+<div class="size-10 bg-primary/20 rounded-full flex items-center justify-center text-primary">
+<span class="material-symbols-outlined font-bold">military_tech</span>
+</div>
+<div>
+<div class="text-[10px] text-white/60 font-bold uppercase tracking-widest">Level</div>
+<div class="text-white font-black">L1 - 动物类</div>
+</div>
+</div>
+<div class="glass-hud px-10 py-3 rounded-full flex flex-col items-center border-b-2 border-b-primary/50">
+<div class="text-white/70 text-xs font-bold uppercase tracking-widest mb-1">Challenge Progress</div>
+<div class="flex items-center gap-4">
+<span class="text-3xl font-black text-white">2 <span class="text-primary">/</span> 5</span>
+<span class="material-symbols-outlined text-white text-2xl">sports_soccer</span>
+</div>
+</div>
+<div class="flex gap-2 pointer-events-auto">
+<button class="size-12 glass-hud rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all">
+<span class="material-symbols-outlined">pause</span>
+</button>
+</div>
+</div>
+<div class="absolute right-6 top-1/2 -translate-y-1/2 h-64 flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">bolt</span>
+<div class="w-4 flex-1 bg-white/10 rounded-full p-0.5 border border-white/10 overflow-hidden relative">
+<div class="absolute bottom-0 w-full h-[30%] energy-bar-vertical rounded-full shadow-[0_0_15px_#6af425]"></div>
+</div>
+<span class="text-[10px] text-white/50 font-bold">NRG</span>
+</div>
+<div class="absolute bottom-0 w-full p-10 flex justify-between items-end pointer-events-auto">
+<div class="relative size-40 glass-hud rounded-full border-2 border-white/20 flex items-center justify-center">
+<div class="size-16 bg-white/30 rounded-full shadow-lg border border-white/40 flex items-center justify-center backdrop-blur-md">
+<span class="material-symbols-outlined text-white/50">drag_pan</span>
+</div>
+<div class="absolute top-4 text-white/20"><span class="material-symbols-outlined">expand_less</span></div>
+<div class="absolute bottom-4 text-white/20"><span class="material-symbols-outlined">expand_more</span></div>
+<div class="absolute left-4 text-white/20"><span class="material-symbols-outlined">chevron_left</span></div>
+<div class="absolute right-4 text-white/20"><span class="material-symbols-outlined">chevron_right</span></div>
+</div>
+<button class="relative group">
+<div class="absolute -inset-4 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="h-28 w-56 bg-primary rounded-3xl flex items-center justify-center gap-4 shadow-[0_10px_0_#2d5a27] active:translate-y-1 active:shadow-none transition-all">
+<span class="material-symbols-outlined text-4xl text-slate-900 font-bold">sports_soccer</span>
+<div class="text-left">
+<div class="text-3xl font-black text-slate-900 leading-none">射门</div>
+<div class="text-sm font-bold text-slate-800 tracking-widest">SHOOT!</div>
+</div>
+</div>
+</button>
+</div>
+<div class="absolute top-32 right-8 flex items-center gap-4 pointer-events-auto">
+<div class="text-right">
+<div class="text-white font-bold text-sm">王小明</div>
+<div class="text-primary text-[10px] font-black uppercase">Pro Kicker</div>
+</div>
+<div class="size-14 rounded-full border-2 border-primary overflow-hidden bg-slate-900">
+<img alt="User avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXH6NOx5UYNzdHTe-p6QVZMFsIEFFU2W5igZ-IzpnqhKAYDrDrjKzpjZfHOXYeCIjRFUVQxI255yZ6y-PoLiWF-OmORg9R-7LQdI4Ve6d0ZpmiTRDBAKcWy22iPzAY6pT-k8psLMii-oT6-NoJtfmc7Dw83IEd-4TcpWbKrie_T3Vm3zXZOYoJVwDc0V7wkPrzV0DnU-oLd8ha6dtdkgHImm6nI1YYhndZIT3HsR-V0_YNvQxFC_a0ybhRHQ8mwrcdOetfU4bUYac"/>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

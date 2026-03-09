@@ -1,0 +1,223 @@
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f48c25",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#221910",
+                    },
+                    fontFamily: {
+                        "display": ["Be Vietnam Pro", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .paper-texture {
+            background-image: radial-gradient(circle at 2px 2px, rgba(244, 140, 37, 0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen paper-texture">
+<div class="max-w-[1200px] mx-auto px-6 py-8">
+<!-- Header -->
+<header class="flex items-center justify-between mb-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md p-6 rounded-xl shadow-sm border border-primary/10">
+<div class="flex items-center gap-4">
+<div class="bg-primary/20 p-3 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-3xl">auto_stories</span>
+</div>
+<div>
+<h1 class="text-2xl font-bold tracking-tight">错题本</h1>
+<p class="text-sm text-slate-500 dark:text-slate-400">Football English Town Review</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-primary">military_tech</span>
+<span class="text-sm font-bold text-primary">学习之星</span>
+</div>
+<button class="flex items-center gap-2 px-6 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-full transition-colors font-bold text-sm">
+<span class="material-symbols-outlined text-lg">arrow_back</span>
+                    返回
+                </button>
+</div>
+</header>
+<!-- Navigation Tabs -->
+<nav class="flex items-center gap-3 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-8 py-3 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20 whitespace-nowrap">全部</button>
+<button class="px-8 py-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full font-bold border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-colors whitespace-nowrap flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">pets</span> L1 动物
+            </button>
+<button class="px-8 py-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full font-bold border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-colors whitespace-nowrap flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">category</span> L2 物品
+            </button>
+<button class="px-8 py-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full font-bold border border-slate-200 dark:border-slate-700 hover:border-primary/50 transition-colors whitespace-nowrap flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">rocket_launch</span> L3 交通
+            </button>
+</nav>
+<!-- Main Grid -->
+<main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+<!-- Card 1: Difficult (Red Border) -->
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border-2 border-red-400 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+<div class="absolute top-0 right-0 bg-red-400 text-white px-3 py-1 text-xs font-bold rounded-bl-lg">重点复习</div>
+<div class="flex justify-between items-start">
+<div class="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-600">
+<img class="w-full h-full object-cover" data-alt="Illustration of a cute white goose" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKMgtzhJCjOKDjSjoGP3QYFUXHDHTWw3SL-B_dSA5POjwcimB6wxg2oJAdcY-tUxPLj5tInvOfYn6juxDf2qMsM8wg-bKDqD423r4U3qfnoxIY05aboVvAzeOFOjvI2Us-bq3nmDyfWVLS1Ufvt9ejKU8CN5kFqzs0PPKz0wJuXT3IrdImI9GldCF0_LbMI3y022RY-zNnoQd9a-NfkRhxrTGTDtSe1M8tq3X9o7-0DGEQ8PccMGLQjp0NR1jSM_sv5bz5S_j5V74"/>
+</div>
+<button class="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-3xl">volume_up</span>
+</button>
+</div>
+<div>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white">goose</h3>
+<p class="text-slate-500 dark:text-slate-400 font-medium italic">/ɡuːs/</p>
+<p class="text-lg font-bold text-primary mt-1">小鹅</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-xs font-bold px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">错误 3 次</span>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-full text-sm transition-all transform active:scale-95">练习发音</button>
+</div>
+</div>
+<!-- Card 2: Medium (Yellow Border) -->
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border-2 border-amber-400 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<div class="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-600">
+<img class="w-full h-full object-cover" data-alt="Shiny red apple on simple background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFxY5nYs3wtjNjNuNGAjoc55Wdvvuhug4RfE8sRoQchXFceZbnnIKxOQV9x2iI0SYH8aIhSaDxkZZ4zpZHfRgf8f1FEAZQpZrlGgYirXnaxlB5G8EDE357EQoc4Wx6MahE9BJRpjE8_fPqKdBsM_FK2PJufsfRL0YRf_-yUCuw8Fjnu28J_nPbeofaFOsVZPAdsfCVVZAJzyNX-ffViKc_k9q309G7IV9RFBGv6sldn-KD62Oq5hMGYlo0JEXiUSgcY4A_8zLtwH0"/>
+</div>
+<button class="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-3xl">volume_up</span>
+</button>
+</div>
+<div>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white">apple</h3>
+<p class="text-slate-500 dark:text-slate-400 font-medium italic">/ˈæp.əl/</p>
+<p class="text-lg font-bold text-primary mt-1">苹果</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-xs font-bold px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded">错误 1 次</span>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-full text-sm transition-all transform active:scale-95">练习发音</button>
+</div>
+</div>
+<!-- Card 3: Medium (Yellow Border) -->
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border-2 border-amber-400 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<div class="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-600">
+<img class="w-full h-full object-cover" data-alt="Yellow school bus toy or real bus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDA5beLLT2_ljlPpc8VyEa1KCuqgN6mxDcK7ldFisIKa90YVXcXcQrH5m1t7JLxVZXWkFnpOIn7cQy6EOf_nWFhHqe9mI2gn341KDmsbwVOtRx2V6vJW--GrJmvhltYqbkM0sTBwPrrNYcr_igh3zpu_RZz-BLda3iA8XJYJhCnDzTwKwBwsorVvaoahpnuveOv-9F5Z3txdLD0WxYxzYzPflKoNlc3HlTxMhjJxFfpqkeu6YYWdJzu3S0zoo8Pt7Um-SYxoa_KyHM"/>
+</div>
+<button class="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-3xl">volume_up</span>
+</button>
+</div>
+<div>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white">bus</h3>
+<p class="text-slate-500 dark:text-slate-400 font-medium italic">/bʌs/</p>
+<p class="text-lg font-bold text-primary mt-1">公交车</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-xs font-bold px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded">错误 2 次</span>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-full text-sm transition-all transform active:scale-95">练习发音</button>
+</div>
+</div>
+<!-- Card 4: Difficult (Red Border) -->
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border-2 border-red-400 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+<div class="absolute top-0 right-0 bg-red-400 text-white px-3 py-1 text-xs font-bold rounded-bl-lg">需多练</div>
+<div class="flex justify-between items-start">
+<div class="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-600">
+<img class="w-full h-full object-cover" data-alt="Cute kitten looking at camera" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1Mwx4OC4qX_9YT9bi2np4I2JqNVdny5u8YGLMKPWj9l8TDyAsBzWB4WaEm5BEZ2--jVd-x3mh95PPywfT7uTOgeySgLNLnL3wNA_QGQd7Dj1jzisgLNWg5Wjdc1yS29llbqWcY6OM5tvLZkw37xzY__MU_qEJfr15bYLlHcMGVDlaxTVO67voyvjWSXsKGFdES9TIm_VLUwWv_GkJgJmvAGIlcMxmYssvYvW4RAoriS8GNq74Bo2HXpEY8_buAHBtWMEGb7MGs78"/>
+</div>
+<button class="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-3xl">volume_up</span>
+</button>
+</div>
+<div>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white">cat</h3>
+<p class="text-slate-500 dark:text-slate-400 font-medium italic">/kæt/</p>
+<p class="text-lg font-bold text-primary mt-1">小猫</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-xs font-bold px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">错误 4 次</span>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-full text-sm transition-all transform active:scale-95">练习发音</button>
+</div>
+</div>
+<!-- Card 5: Medium (Yellow Border) -->
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border-2 border-amber-400 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<div class="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-600">
+<img class="w-full h-full object-cover" data-alt="Happy golden retriever puppy" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBu-Sn_YJSo5Zi02IbFhnh4gm_mO2ubHFS3bPtO-i9tizFwQHLi0qHHKWcrtE1OWyDClOBtwjQOJU7qGfM0mx_uVnnV7nCwsg7ZMQFQHsrtU7eEs2fnzeEurgR7K2_kc7ACuqhzRmcKMl_OMadWgxKk6KF8AyQ-BwqvQwEYXMsm5EyjvThu0-r1WBHykspz0stjRAoLceFXKldTJccP80CptOn-tWVf6_fjQjIsGMjEgzFYlqC0rKuxCcErjhHR7ubFmsIlliHkxlY"/>
+</div>
+<button class="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-3xl">volume_up</span>
+</button>
+</div>
+<div>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white">dog</h3>
+<p class="text-slate-500 dark:text-slate-400 font-medium italic">/dɒɡ/</p>
+<p class="text-lg font-bold text-primary mt-1">小狗</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-xs font-bold px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded">错误 1 次</span>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-full text-sm transition-all transform active:scale-95">练习发音</button>
+</div>
+</div>
+<!-- Card 6: Medium (Yellow Border) -->
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border-2 border-amber-400 shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<div class="w-24 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-slate-100 dark:border-slate-600">
+<img class="w-full h-full object-cover" data-alt="Profile of a majestic elephant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMFG8ZetqfZ3h6MX9_OfF25WKRyRrmgfAm-TIlpfL5sktcuRkFk_I3nGTEVYW0zmqetgiPV5aT4UPT2rPzbW0WDyHCih9E3mkudyFu_pXVPw3P9M5YYnRrs9WNrD-20x4YG6uwJ8gOAHzR0fx_Kd0z3Tf630DzR-aGjAH_bVVPua7ldtJY0SNjGsEGeSQNzadbJlypvMBqYcUxQK1QmoPDyW92wt055MQXNui_gYxkphrG7DVA1SMIyErX9IRD2wzFOlxJL0iNwSk"/>
+</div>
+<button class="p-2 text-primary hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-3xl">volume_up</span>
+</button>
+</div>
+<div>
+<h3 class="text-2xl font-bold text-slate-900 dark:text-white">elephant</h3>
+<p class="text-slate-500 dark:text-slate-400 font-medium italic">/ˈel.ɪ.fənt/</p>
+<p class="text-lg font-bold text-primary mt-1">大象</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<span class="text-xs font-bold px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded">错误 2 次</span>
+<button class="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary font-bold rounded-full text-sm transition-all transform active:scale-95">练习发音</button>
+</div>
+</div>
+</main>
+<!-- Stats and Actions -->
+<footer class="flex flex-col items-center gap-6 pb-12">
+<div class="bg-white/50 dark:bg-slate-800/50 backdrop-blur px-8 py-4 rounded-full border border-primary/10 flex items-center gap-8 shadow-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">error</span>
+<span class="text-slate-600 dark:text-slate-300">共 <span class="font-bold text-slate-900 dark:text-white">8</span> 个错题</span>
+</div>
+<div class="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-500">task_alt</span>
+<span class="text-slate-600 dark:text-slate-300">本周已复习 <span class="font-bold text-slate-900 dark:text-white">3</span> 个</span>
+</div>
+</div>
+<button class="group relative flex items-center justify-center min-w-[320px] px-12 py-5 bg-primary hover:bg-primary/90 text-white text-xl font-bold rounded-full shadow-xl shadow-primary/30 transition-all transform hover:-translate-y-1 active:scale-95">
+<span class="material-symbols-outlined mr-3 text-3xl group-hover:rotate-12 transition-transform">rocket</span>
+                开始复习
+                <div class="absolute -top-1 -right-1 flex h-4 w-4">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-4 w-4 bg-primary border-2 border-white"></span>
+</div>
+</button>
+</footer>
+</div>
+</body></html>

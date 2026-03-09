@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>足球英语小镇 - 原型页面导航</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh; color: #fff; padding: 40px 20px;
+    }
+    .header { text-align: center; margin-bottom: 48px; }
+    .header h1 { font-size: 2.5rem; background: linear-gradient(90deg, #f9d423, #ff4e50); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header p { color: #8892b0; margin-top: 12px; font-size: 1.1rem; }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px; max-width: 1200px; margin: 0 auto;
+    }
+    .card {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; overflow: hidden; transition: all 0.3s ease;
+      text-decoration: none; color: inherit; display: block;
+    }
+    .card:hover { transform: translateY(-6px); border-color: #f9d423; box-shadow: 0 12px 40px rgba(249,212,35,0.15); }
+    .card-number {
+      display: inline-block; background: linear-gradient(135deg, #f9d423, #ff4e50);
+      color: #1a1a2e; font-weight: 700; width: 36px; height: 36px; border-radius: 50%;
+      text-align: center; line-height: 36px; font-size: 0.9rem;
+    }
+    .card-body { padding: 24px; }
+    .card-body h3 { font-size: 1.2rem; margin: 12px 0 8px; }
+    .card-body p { color: #8892b0; font-size: 0.9rem; line-height: 1.5; }
+    .tag { display: inline-block; background: rgba(249,212,35,0.15); color: #f9d423; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; margin-top: 12px; }
+    .footer { text-align: center; margin-top: 48px; color: #555; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>⚽ 足球英语小镇</h1>
+    <p>Football English Town — 原型页面导航（共 10 页）</p>
+  </div>
+  <div class="grid">
+    <a class="card" href="01_welcome.html">
+      <div class="card-body">
+        <span class="card-number">1</span>
+        <h3>🏠 欢迎引导页</h3>
+        <p>游戏品牌展示、三个可爱吉祥物、核心玩法三步介绍（踢单词→进球→搭房子）</p>
+        <span class="tag">首次使用</span>
+      </div>
+    </a>
+    <a class="card" href="02_character_selection.html">
+      <div class="card-body">
+        <span class="card-number">2</span>
+        <h3>🐻 角色选择</h3>
+        <p>小熊、小兔、小猫三个角色供选择，更衣室背景，步骤进度指示</p>
+        <span class="tag">首次使用</span>
+      </div>
+    </a>
+    <a class="card" href="03_main_dashboard.html">
+      <div class="card-body">
+        <span class="card-number">3</span>
+        <h3>🗺️ 主界面地图</h3>
+        <p>15 个关卡路径、初/中/高三级难度、星星进度、闯关和工坊入口</p>
+        <span class="tag">核心导航</span>
+      </div>
+    </a>
+    <a class="card" href="04_football_gameplay.html">
+      <div class="card-body">
+        <span class="card-number">4</span>
+        <h3>⚽ 足球闯关</h3>
+        <p>卡通足球场、悬浮单词泡泡、语音识别交互、能量条、射门按钮</p>
+        <span class="tag">核心玩法</span>
+      </div>
+    </a>
+    <a class="card" href="05_level_complete.html">
+      <div class="card-body">
+        <span class="card-number">5</span>
+        <h3>🎉 通关庆祝</h3>
+        <p>烟花庆祝、成绩统计（正确率/用时）、错题回顾、搭房子入口</p>
+        <span class="tag">成就激励</span>
+      </div>
+    </a>
+    <a class="card" href="06_creative_workshop.html">
+      <div class="card-body">
+        <span class="card-number">6</span>
+        <h3>🏡 创意工坊</h3>
+        <p>真实房屋组件（砖墙/窗户/门/屋顶/装饰）、自由搭建画布、保存作品</p>
+        <span class="tag">奖励创造</span>
+      </div>
+    </a>
+    <a class="card" href="07_wrong_word_review.html">
+      <div class="card-body">
+        <span class="card-number">7</span>
+        <h3>📖 错题本</h3>
+        <p>错误单词卡片、发音练习、分类过滤、复习统计</p>
+        <span class="tag">复习巩固</span>
+      </div>
+    </a>
+    <a class="card" href="08_parent_dashboard.html">
+      <div class="card-body">
+        <span class="card-number">8</span>
+        <h3>📊 家长数据中心</h3>
+        <p>学习时长、正确率折线图、单词分类掌握饼图、高频错误词</p>
+        <span class="tag">家长专区</span>
+      </div>
+    </a>
+    <a class="card" href="09_parent_settings.html">
+      <div class="card-body">
+        <span class="card-number">9</span>
+        <h3>⚙️ 家长设置</h3>
+        <p>每日时长控制、难度选择、安全密码、数据导出</p>
+        <span class="tag">家长专区</span>
+      </div>
+    </a>
+    <a class="card" href="10_api_configuration.html">
+      <div class="card-body">
+        <span class="card-number">10</span>
+        <h3>🔧 系统配置</h3>
+        <p>火山引擎语音识别 + 飞书词库 API 配置、连接验证、环境检查</p>
+        <span class="tag">开发者设置</span>
+      </div>
+    </a>
+  </div>
+  <div class="footer">
+    <p>Stitch AI 生成 · 足球英语小镇 原型设计</p>
+  </div>
+</body>
+</html>

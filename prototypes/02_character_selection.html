@@ -1,0 +1,119 @@
+<html><head><meta charset="utf-8"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700;800&amp;family=Noto+Sans:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "primary": "#f4af25",
+          "background-light": "#f8f7f5",
+          "background-dark": "#221c10",
+        },
+        fontFamily: {
+          "display": ["Spline Sans", "Noto Sans", "sans-serif"]
+        },
+        borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+      },
+    },
+  }
+</script>
+</head><body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Top Navigation with Back Button -->
+<header class="flex items-center justify-between px-6 py-6 lg:px-20">
+<button class="flex items-center justify-center size-14 bg-white dark:bg-slate-800 shadow-sm rounded-full hover:bg-primary/10 transition-colors border-2 border-primary/20">
+<span class="material-symbols-outlined text-primary text-3xl">arrow_back</span>
+</button>
+<div class="flex items-center gap-3">
+<div class="size-10 text-primary">
+<svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 45.8096C19.6865 45.8096 15.4698 44.5305 11.8832 42.134C8.29667 39.7376 5.50128 36.3314 3.85056 32.3462C2.19985 28.361 1.76794 23.9758 2.60947 19.7452C3.451 15.5145 5.52816 11.6284 8.57829 8.5783C11.6284 5.52817 15.5145 3.45101 19.7452 2.60948C23.9758 1.76795 28.361 2.19986 32.3462 3.85057C36.3314 5.50129 39.7376 8.29668 42.134 11.8833C44.5305 15.4698 45.8096 19.6865 45.8096 24L24 24L24 45.8096Z"></path>
+</svg>
+</div>
+<h2 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">足球英语小镇</h2>
+</div>
+<div class="w-14"></div> <!-- Spacer for symmetry -->
+</header>
+<main class="flex-1 flex flex-col items-center justify-center px-4 lg:px-20 pb-20">
+<!-- Progress Indicator -->
+<div class="w-full max-w-2xl mb-12">
+<div class="flex justify-between items-end mb-3">
+<span class="text-primary font-bold text-lg">步骤 2/3</span>
+<span class="text-slate-500 dark:text-slate-400 font-medium">角色选择中...</span>
+</div>
+<div class="h-4 w-full bg-primary/20 rounded-full overflow-hidden p-1">
+<div class="h-full bg-primary rounded-full" style="width: 66%;"></div>
+</div>
+</div>
+<!-- Main Title -->
+<h1 class="text-4xl lg:text-6xl font-black text-center mb-16 text-slate-900 dark:text-slate-100 tracking-tight">
+        选择你的伙伴!
+      </h1>
+<!-- Character Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
+<!-- Bear Card -->
+<div class="group relative flex flex-col items-center p-6 bg-white dark:bg-slate-800 rounded-xl border-4 border-transparent hover:border-primary transition-all duration-300 shadow-xl hover:shadow-primary/20">
+<div class="w-full aspect-[4/5] bg-sky-100 dark:bg-sky-900/30 rounded-lg overflow-hidden mb-6 relative">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Cute brown bear wearing a blue football jersey" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAooMQ3vLQUfT38smOZJEON4vYQxhvc2lYPRr2GEIHFePCbJ3TzBNS_qpNM0or4ybPw49n4pbwu-EYd9L2C2tIpqC8lRnLnpscRBb-5XLL5jhfx0iaHUYS2IEvv1L6z6X-qgi079fdCMG-z1OMHFIOrtqJi0Wyjzxk5vtJkwxcKVRYyLB1D9RhkCt7gMVjW0KwjH3j51CGMvBNrvku4Qc4QJ1rFawRjF2FKlofjuPu263TTIGv1YAl0O7bY01xspbboY-jZfJqpd2s');"></div>
+</div>
+<div class="text-center mb-6">
+<h3 class="text-2xl font-bold text-slate-900 dark:text-slate-100">小熊 Bear</h3>
+<p class="text-primary font-semibold">Blue Jersey</p>
+</div>
+<button class="w-full py-4 bg-primary text-slate-900 font-black text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-lg">
+            选TA!
+          </button>
+</div>
+<!-- Rabbit Card -->
+<div class="group relative flex flex-col items-center p-6 bg-white dark:bg-slate-800 rounded-xl border-4 border-primary transition-all duration-300 shadow-xl shadow-primary/30 scale-105 z-10">
+<div class="absolute -top-4 -right-4 bg-primary text-slate-900 font-bold px-4 py-2 rounded-full text-sm shadow-md">推荐角色</div>
+<div class="w-full aspect-[4/5] bg-pink-100 dark:bg-pink-900/30 rounded-lg overflow-hidden mb-6 relative">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Cute white rabbit wearing a pink football jersey" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBvptM30ZdHIruAsWqa_iufwOs1W_8S8vu-pRwUluYEIHoQGmAXjPV-uNb5khtqpVoUT_0q_iI1UmCUjyW6orivZptbjawBH8pZZ_GaJUmPqjJOCp0Gjf_S9J6NzC05UQCXY_JBydCplDBJcxD-daMpolwCr6NhjIgPoEXGuyy38gTkFwb7RgPg1mJHY9HySOcimdznftS1fAgnC5YjS4aVrqHdRi_OUtyux-Tu2MMGm685Ifyw9S1YTyrnUL4VnXJsroKi2cgHrIE');"></div>
+</div>
+<div class="text-center mb-6">
+<h3 class="text-2xl font-bold text-slate-900 dark:text-slate-100">小兔 Rabbit</h3>
+<p class="text-primary font-semibold">Pink Jersey</p>
+</div>
+<button class="w-full py-4 bg-primary text-slate-900 font-black text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-lg">
+            选TA!
+          </button>
+</div>
+<!-- Cat Card -->
+<div class="group relative flex flex-col items-center p-6 bg-white dark:bg-slate-800 rounded-xl border-4 border-transparent hover:border-primary transition-all duration-300 shadow-xl hover:shadow-primary/20">
+<div class="w-full aspect-[4/5] bg-orange-100 dark:bg-orange-900/30 rounded-lg overflow-hidden mb-6 relative">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Cute ginger cat wearing an orange football jersey" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC6M9cBK4BR4OUQo8Hsrw0yTaqi0HdfrM5feP71RvdJEKcv3svALIf-axFic5USyGiSqcxlgbzIdn4QH3Lul-IrrQBIcI_JGqVk1wiXlrydX5fHNiylX4HyF4OmhSxzzIHYnArYGFCOj245Ay9i5U4uhEMsq1R8_wEZaqglJuylQTYTQ1RbgWAf3MKp0DcmWcNrO3t4waE6oK2meOSo6ibi4JpD0zL0YHtwTtoBnOLRv-6yH6Bxxmkv6Vg56zZdctIVvE8SzkQgxTU');"></div>
+</div>
+<div class="text-center mb-6">
+<h3 class="text-2xl font-bold text-slate-900 dark:text-slate-100">小猫 Cat</h3>
+<p class="text-primary font-semibold">Orange Jersey</p>
+</div>
+<button class="w-full py-4 bg-primary text-slate-900 font-black text-xl rounded-full hover:scale-105 active:scale-95 transition-transform shadow-lg">
+            选TA!
+          </button>
+</div>
+</div>
+<!-- Background Elements (Locker Room Feel) -->
+<div class="fixed inset-0 -z-10 opacity-5 pointer-events-none overflow-hidden">
+<div class="absolute top-1/4 left-10 text-[12rem] material-symbols-outlined select-none">sports_soccer</div>
+<div class="absolute bottom-1/4 right-10 text-[12rem] material-symbols-outlined select-none rotate-12">checkroom</div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full border-[60px] border-primary/20 rounded-full blur-3xl"></div>
+</div>
+</main>
+<!-- Footer Controls -->
+<footer class="p-8 flex justify-center">
+<div class="flex gap-4 w-full max-w-md">
+<button class="flex-1 py-4 px-8 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-full hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
+          上一步
+        </button>
+<button class="flex-[2] py-4 px-8 bg-primary text-slate-900 font-black rounded-full hover:opacity-90 shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+<span>确认我的伙伴</span>
+<span class="material-symbols-outlined">celebration</span>
+</button>
+</div>
+</footer>
+</div>
+</body></html>
