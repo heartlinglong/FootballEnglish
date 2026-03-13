@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useRef, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { characters, levels, workshopPalette } from './data/gameData'
 import {
   backgroundLabel,
@@ -9,7 +9,6 @@ import {
   levelByNumber,
   pickWordsForLevel,
 } from './lib/game'
-import { translateChineseToEnglish } from './lib/translation'
 import { createDefaultAppState, loadAppState, saveAppState } from './lib/storage'
 import './index.css'
 import type {
@@ -56,8 +55,6 @@ type SessionResult = {
   wrongWords: WrongWordEntry[]
 }
 
-type Direction = 'up' | 'down' | 'left' | 'right'
-
 type WordVisual = {
   emoji: string
   accent: string
@@ -65,8 +62,30 @@ type WordVisual = {
   scene: string
 }
 
+type BubbleFeedbackState = Record<string, 'correct' | 'wrong'>
+
 const goalPosition = { x: 50, y: 10 }
 const MAX_FIELD_BUBBLES = 3
+const PLAYER_MOVE_STEP = 6
+const GOAL_SHOT_DISTANCE = 24
+const INITIAL_LEVEL_ENERGY = 35
+const CORRECT_ANSWER_ENERGY_BONUS = 10
+const WRONG_ANSWER_ENERGY_COST = 5
+const SKIP_BUBBLE_ENERGY_COST = 5
+const MIN_LEVEL_DURATION_SECONDS = 8
+const GAMEPLAY_FOCUS_DELAY_MS = 0
+const VOICE_COUNTDOWN_STEP_MS = 1000
+const VOICE_LISTENING_WINDOW_MS = 3000
+const VOICE_FALLBACK_RMS_THRESHOLD = 0.05
+const VOICE_FALLBACK_PEAK_THRESHOLD = 0.075
+const VOICE_FALLBACK_MIN_HEARD_FRAMES = 8
+const BUBBLE_FEEDBACK_DURATION_MS = 720
+const ENERGY_PULSE_DURATION_MS = 480
+const GOAL_CELEBRATION_DURATION_MS = 900
+
+type WordSpotlightState = {
+  bubbleId: string
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
@@ -95,119 +114,6 @@ function createBubbleLayout(words: WordEntry[]) {
     attempts: 0,
     createdOrder: index,
   }))
-}
-
-function getNextBubblePosition(existingBubbles: BubbleState[]) {
-  const candidatePositions = [
-    { x: 18, y: 68 },
-    { x: 32, y: 38 },
-    { x: 56, y: 61 },
-    { x: 70, y: 32 },
-    { x: 82, y: 55 },
-    { x: 44, y: 22 },
-    { x: 24, y: 24 },
-    { x: 60, y: 20 },
-    { x: 79, y: 74 },
-    { x: 12, y: 48 },
-    { x: 50, y: 82 },
-    { x: 88, y: 84 },
-  ]
-
-  const nextPosition = candidatePositions.find((candidate) =>
-    existingBubbles.every(
-      (bubble) => Math.hypot(bubble.x - candidate.x, bubble.y - candidate.y) > 14,
-    ),
-  )
-
-  return nextPosition ?? { x: 50, y: 78 }
-}
-
-function normalizeChineseKeyword(input: string) {
-  return input.replace(/\s+/g, '').replace(/[，。！？、,.!?]/g, '').trim()
-}
-
-function normalizeEnglishKeyword(input: string) {
-  return input
-    .toLowerCase()
-    .replace(/[’']/g, "'")
-    .replace(/[^\p{L}\p{N}?' ]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function buildGeneratedWordId(keyword: string, english: string, difficulty: Difficulty) {
-  const englishToken = normalizeEnglishKeyword(english).replace(/\s+/g, '-')
-  const chineseToken = encodeURIComponent(normalizeChineseKeyword(keyword) || keyword.trim())
-  return `generated-${difficulty}-${englishToken || 'word'}-${chineseToken}`
-}
-
-function findWordMatch(wordBank: WordEntry[], keyword: string, difficulty?: Difficulty) {
-  const normalizedKeyword = normalizeChineseKeyword(keyword)
-  const candidates = difficulty
-    ? wordBank.filter((word) => word.level === difficulty)
-    : wordBank
-
-  const exact = candidates.find(
-    (word) => normalizeChineseKeyword(word.chinese) === normalizedKeyword,
-  )
-  if (exact) {
-    return exact
-  }
-
-  return (
-    candidates
-      .filter((word) => {
-        const normalizedChinese = normalizeChineseKeyword(word.chinese)
-        return (
-          normalizedChinese.includes(normalizedKeyword) ||
-          normalizedKeyword.includes(normalizedChinese)
-        )
-      })
-      .sort((left, right) => left.chinese.length - right.chinese.length)[0] ?? null
-  )
-}
-
-async function resolveParentWord(
-  keyword: string,
-  wordBank: WordEntry[],
-  difficulty: Difficulty,
-) {
-  const displayChinese = keyword.trim()
-  const exactCurrentWord = findWordMatch(wordBank, displayChinese, difficulty)
-  if (exactCurrentWord) {
-    return { word: exactCurrentWord, source: 'existing' as const }
-  }
-
-  const existingWord = findWordMatch(wordBank, displayChinese)
-  if (existingWord) {
-    return existingWord.level === difficulty
-      ? { word: existingWord, source: 'existing' as const }
-      : {
-          word: {
-            ...existingWord,
-            id: buildGeneratedWordId(displayChinese, existingWord.english, difficulty),
-            level: difficulty,
-          },
-          source: 'generated' as const,
-        }
-  }
-
-  const translatedEnglish = await translateChineseToEnglish(displayChinese)
-  if (!translatedEnglish) {
-    return null
-  }
-
-  return {
-    word: {
-      id: buildGeneratedWordId(displayChinese, translatedEnglish, difficulty),
-      english: translatedEnglish,
-      chinese: displayChinese,
-      level: difficulty,
-      category: '家长词库',
-      enabled: true,
-    },
-    source: 'generated' as const,
-  }
 }
 
 function countWordsByDifficulty(wordBank: WordEntry[]) {
@@ -258,6 +164,14 @@ function getActiveBubble(session: GameSession | null, focusedBubbleId: string | 
       }))
       .sort((left, right) => left.distance - right.distance)[0] ?? null
   )
+}
+
+function buildWordSpotlight(word: WordEntry) {
+  return {
+    word,
+    imageUrl: createWordImage(word),
+    visual: getWordVisual(word),
+  }
 }
 
 function drawWorkshopShape(
@@ -409,6 +323,71 @@ function createWordImage(word: WordEntry) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
 
+function getLevelBadgeEmoji(level: LevelDefinition) {
+  if (level.difficulty === '初级') {
+    return '⚽'
+  }
+  if (level.difficulty === '中级') {
+    return '🚀'
+  }
+  return '🏆'
+}
+
+function StarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 2.8l2.74 5.55 6.12.89-4.43 4.32 1.04 6.1L12 16.78 6.53 19.66l1.04-6.1L3.14 9.24l6.12-.89L12 2.8z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function HeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 20.4l-1.16-1.06C5.12 14.1 2 11.26 2 7.77 2 4.93 4.24 2.8 7.07 2.8c1.6 0 3.13.74 4.13 1.9 1-1.16 2.53-1.9 4.13-1.9C18.16 2.8 20.4 4.93 20.4 7.77c0 3.5-3.12 6.33-8.84 11.59L12 20.4z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function MicIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 15.8a3.8 3.8 0 0 0 3.8-3.8V7.8a3.8 3.8 0 1 0-7.6 0V12a3.8 3.8 0 0 0 3.8 3.8zm6-3.8a1 1 0 1 1 2 0 8 8 0 0 1-7 7.93V22a1 1 0 1 1-2 0v-2.07A8 8 0 0 1 4 12a1 1 0 1 1 2 0 6 6 0 0 0 12 0z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function HelpIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 20.2a1.35 1.35 0 1 0 0 2.7 1.35 1.35 0 0 0 0-2.7zm.08-17.4C8.5 2.8 6 5.08 6 8.13a1 1 0 1 0 2 0c0-1.88 1.6-3.33 4-3.33 2.12 0 3.54 1.2 3.54 2.94 0 1.23-.6 1.99-2.24 3.03-1.95 1.24-2.8 2.48-2.8 4.53v.36a1 1 0 1 0 2 0v-.3c0-1.31.45-2.04 1.87-2.95 1.88-1.2 3.17-2.58 3.17-4.67 0-2.95-2.4-4.94-5.46-4.94z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M19.14 12.94c.04-.3.06-.62.06-.94s-.02-.64-.06-.94l2.03-1.58a.8.8 0 0 0 .2-1.03l-1.92-3.32a.8.8 0 0 0-.98-.36l-2.4.96a7.6 7.6 0 0 0-1.64-.94l-.36-2.55A.8.8 0 0 0 13.3 1h-3.84a.8.8 0 0 0-.79.67l-.36 2.55c-.58.22-1.12.54-1.64.94l-2.4-.96a.8.8 0 0 0-.98.36L1.37 7.88a.8.8 0 0 0 .2 1.03l2.03 1.58c-.04.3-.06.62-.06.94s.02.64.06.94L1.57 13.95a.8.8 0 0 0-.2 1.03l1.92 3.32c.2.35.62.5.98.36l2.4-.96c.5.4 1.05.72 1.64.94l.36 2.55c.06.39.4.67.79.67h3.84c.39 0 .73-.28.79-.67l.36-2.55c.58-.22 1.14-.54 1.64-.94l2.4.96c.36.14.78-.01.98-.36l1.92-3.32a.8.8 0 0 0-.2-1.03l-2.03-1.58zM11.38 15.2A3.2 3.2 0 1 1 11.38 8.8a3.2 3.2 0 0 1 0 6.4z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
 function App() {
   const [appState, setAppState] = useState<AppState>(() => loadAppState())
   const [gameSession, setGameSession] = useState<GameSession | null>(null)
@@ -420,28 +399,24 @@ function App() {
   const [speechError, setSpeechError] = useState('')
   const [workshopHistory, setWorkshopHistory] = useState<WorkshopBlock[][]>([])
   const [focusedBubbleId, setFocusedBubbleId] = useState<string | null>(null)
-  const [parentWordDraft, setParentWordDraft] = useState('')
-  const [parentWordLoading, setParentWordLoading] = useState(false)
-  const [parentWordMessage, setParentWordMessage] = useState('')
   const [micCountdown, setMicCountdown] = useState<number | null>(null)
   const [listeningBubbleId, setListeningBubbleId] = useState<string | null>(null)
-  const [wordSpotlight, setWordSpotlight] = useState<{
-    word: WordEntry
-    imageUrl: string
-    visual: WordVisual
-  } | null>(null)
+  const [wordSpotlight, setWordSpotlight] = useState<WordSpotlightState | null>(null)
+  const [bubbleFeedback, setBubbleFeedback] = useState<BubbleFeedbackState>({})
+  const [energyPulse, setEnergyPulse] = useState(false)
+  const [goalCelebrating, setGoalCelebrating] = useState(false)
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
   const workshopCanvasRef = useRef<HTMLDivElement | null>(null)
   const gameplaySceneRef = useRef<HTMLElement | null>(null)
-  const parentWordInputRef = useRef<HTMLInputElement | null>(null)
   const answerDraftRef = useRef(answerDraft)
   const activeBubbleRef = useRef<ReturnType<typeof getActiveBubble>>(null)
-  const finishLevelRef = useRef<() => void>(() => {})
   const countdownTimerRef = useRef<number | null>(null)
   const listeningTimerRef = useRef<number | null>(null)
+  const managedTimeoutsRef = useRef<number[]>([])
   const voicePracticeStreamRef = useRef<MediaStream | null>(null)
   const voicePracticeAudioContextRef = useRef<AudioContext | null>(null)
   const voicePracticeFrameRef = useRef<number | null>(null)
+  const finishResultTimerRef = useRef<number | null>(null)
   const dragState = useRef<{
     id: string
     pointerId: number
@@ -449,25 +424,91 @@ function App() {
     offsetY: number
   } | null>(null)
 
-  const currentCharacter = characters.find(
-    (character) => character.id === appState.selectedCharacter,
+  const currentCharacter = useMemo(
+    () => characters.find((character) => character.id === appState.selectedCharacter),
+    [appState.selectedCharacter],
   )
-  const currentLevel = levelByNumber(appState.currentLevel)
-  const activeBubble = getActiveBubble(gameSession, focusedBubbleId)
-  const wordBankSummary = buildWordBankSummary(appState.wordBank)
-  const safeScene =
-    appState.scene === 'gameplay' && !gameSession
-      ? appState.selectedCharacter
-        ? 'dashboard'
-        : 'welcome'
-      : appState.scene === 'complete' && !lastResult
+  const currentLevel = useMemo(() => levelByNumber(appState.currentLevel), [appState.currentLevel])
+  const activeBubble = useMemo(
+    () => getActiveBubble(gameSession, focusedBubbleId),
+    [focusedBubbleId, gameSession],
+  )
+  const wordBankSummary = useMemo(() => buildWordBankSummary(appState.wordBank), [appState.wordBank])
+  const safeScene = useMemo(
+    () =>
+      appState.scene === 'gameplay' && !gameSession
         ? appState.selectedCharacter
           ? 'dashboard'
           : 'welcome'
-        : appState.scene
+        : appState.scene === 'complete' && !lastResult
+          ? appState.selectedCharacter
+            ? 'dashboard'
+            : 'welcome'
+          : appState.scene,
+    [appState.scene, appState.selectedCharacter, gameSession, lastResult],
+  )
   const usageLocked = appState.usageTodayMinutes >= appState.settings.dailyLimit
-  const selectedBlock =
-    appState.workshopBlocks.find((block) => block.id === selectedBlockId) ?? null
+  const selectedBlock = useMemo(
+    () => appState.workshopBlocks.find((block) => block.id === selectedBlockId) ?? null,
+    [appState.workshopBlocks, selectedBlockId],
+  )
+  const spotlightBubble = useMemo(() => {
+    if (!gameSession || !wordSpotlight) {
+      return null
+    }
+
+    return gameSession.bubbles.find((bubble) => bubble.id === wordSpotlight.bubbleId) ?? null
+  }, [gameSession, wordSpotlight])
+  const spotlightCard = useMemo(
+    () => (spotlightBubble ? buildWordSpotlight(spotlightBubble.word) : null),
+    [spotlightBubble],
+  )
+
+  activeBubbleRef.current = activeBubble
+
+  const clearManagedTimeouts = useCallback(() => {
+    managedTimeoutsRef.current.forEach((timeoutId) => {
+      window.clearTimeout(timeoutId)
+    })
+    managedTimeoutsRef.current = []
+  }, [])
+
+  const scheduleManagedTimeout = useCallback(
+    (callback: () => void, delay: number) => {
+      const timeoutId = window.setTimeout(() => {
+        managedTimeoutsRef.current = managedTimeoutsRef.current.filter((id) => id !== timeoutId)
+        callback()
+      }, delay)
+      managedTimeoutsRef.current.push(timeoutId)
+      return timeoutId
+    },
+    [],
+  )
+
+  const pulseEnergy = useCallback(() => {
+    setEnergyPulse(true)
+    scheduleManagedTimeout(() => {
+      setEnergyPulse(false)
+    }, ENERGY_PULSE_DURATION_MS)
+  }, [scheduleManagedTimeout])
+
+  const triggerBubbleFeedback = useCallback(
+    (bubbleId: string, status: 'correct' | 'wrong') => {
+      setBubbleFeedback((previous) => ({ ...previous, [bubbleId]: status }))
+      scheduleManagedTimeout(() => {
+        setBubbleFeedback((previous) => {
+          if (!previous[bubbleId]) {
+            return previous
+          }
+
+          const next = { ...previous }
+          delete next[bubbleId]
+          return next
+        })
+      }, BUBBLE_FEEDBACK_DURATION_MS)
+    },
+    [scheduleManagedTimeout],
+  )
 
   useEffect(() => {
     saveAppState(appState)
@@ -478,28 +519,42 @@ function App() {
   }, [answerDraft])
 
   useEffect(() => {
-    activeBubbleRef.current = activeBubble
-  }, [activeBubble])
-
-  useEffect(() => {
     if (safeScene !== appState.scene) {
       setAppState((previous) => ({ ...previous, scene: safeScene }))
     }
   }, [appState.scene, safeScene])
 
   useEffect(() => {
+    if (!activeBubble) {
+      if (wordSpotlight) {
+        setWordSpotlight(null)
+      }
+      return
+    }
+
+    if (wordSpotlight?.bubbleId !== activeBubble.bubble.id) {
+      // 图片卡和当前可交互泡泡共用同一来源，避免两处 UI 指向不同单词。
+      setWordSpotlight({ bubbleId: activeBubble.bubble.id })
+    }
+  }, [activeBubble, wordSpotlight])
+
+  useEffect(() => {
     return () => {
       if (countdownTimerRef.current) {
         window.clearTimeout(countdownTimerRef.current)
       }
+      if (finishResultTimerRef.current) {
+        window.clearTimeout(finishResultTimerRef.current)
+      }
       if (listeningTimerRef.current) {
         window.clearTimeout(listeningTimerRef.current)
       }
+      clearManagedTimeouts()
       window.speechSynthesis?.cancel()
       recognitionRef.current?.stop()
       stopVoicePractice()
     }
-  }, [])
+  }, [clearManagedTimeouts])
 
   useEffect(() => {
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -526,120 +581,14 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (appState.scene !== 'gameplay') {
-      return
-    }
-
-    function nudgePlayer(direction: Direction) {
-      setGameSession((previous) => {
-        if (!previous) {
-          return previous
-        }
-
-        const delta =
-          direction === 'up'
-            ? { x: 0, y: -6 }
-            : direction === 'down'
-              ? { x: 0, y: 6 }
-              : direction === 'left'
-                ? { x: -6, y: 0 }
-                : { x: 6, y: 0 }
-
-        return {
-          ...previous,
-          player: {
-            x: clamp(previous.player.x + delta.x, 6, 94),
-            y: clamp(previous.player.y + delta.y, 10, 86),
-          },
-        }
-      })
-    }
-
-    function submitKeyboardAnswer(rawAnswer: string) {
-      setGameSession((previous) => {
-        const currentBubble = activeBubbleRef.current
-        if (!previous || !currentBubble) {
-          return previous
-        }
-
-        if (currentBubble.distance > 16) {
-          return {
-            ...previous,
-            feedback: '再靠近一点，单词泡泡会放大提醒你。',
-          }
-        }
-
-        const isCorrect = isAnswerCorrect(rawAnswer, currentBubble.bubble.word.english)
-        setAnswerDraft('')
-        return {
-          ...previous,
-          bubbles: previous.bubbles.map((bubble) =>
-            bubble.id === currentBubble.bubble.id
-              ? {
-                  ...bubble,
-                  status: isCorrect ? 'cleared' : bubble.status,
-                  attempts: bubble.attempts + (isCorrect ? 0 : 1),
-                }
-              : bubble,
-          ),
-          energy: clamp(previous.energy + (isCorrect ? 10 : 0), 0, 100),
-          feedback: isCorrect
-            ? `太棒啦！${currentBubble.bubble.word.english} 已被踢飞，去找下一个泡泡。`
-            : `再试试！${currentBubble.bubble.word.chinese} 的英文是 ${currentBubble.bubble.word.english}。`,
-        }
-      })
-    }
-
-    function isSpaceKey(event: KeyboardEvent) {
-      return event.code === 'Space' || event.key === ' ' || event.key === 'Spacebar' || event.key === 'Space'
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      switch (event.key) {
-        case 'ArrowUp':
-          event.preventDefault()
-          nudgePlayer('up')
-          break
-        case 'ArrowDown':
-          event.preventDefault()
-          nudgePlayer('down')
-          break
-        case 'ArrowLeft':
-          event.preventDefault()
-          nudgePlayer('left')
-          break
-        case 'ArrowRight':
-          event.preventDefault()
-          nudgePlayer('right')
-          break
-        case 'Enter':
-          if (answerDraftRef.current.trim()) {
-            submitKeyboardAnswer(answerDraftRef.current)
-          }
-          break
-        default:
-          if (!isSpaceKey(event)) {
-            break
-          }
-          event.preventDefault()
-          finishLevelRef.current()
-          break
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown, true)
-    return () => document.removeEventListener('keydown', handleKeyDown, true)
-  }, [appState.scene])
-
-  useEffect(() => {
     if (safeScene !== 'gameplay') {
       return
     }
 
-    window.setTimeout(() => {
+    scheduleManagedTimeout(() => {
       gameplaySceneRef.current?.focus()
-    }, 0)
-  }, [safeScene, gameSession?.level.id])
+    }, GAMEPLAY_FOCUS_DELAY_MS)
+  }, [gameSession?.level.id, safeScene, scheduleManagedTimeout])
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -685,13 +634,12 @@ function App() {
     setAppState((previous) => updater(previous))
   }
 
-  function releaseGameplayFocus() {
-    parentWordInputRef.current?.blur()
+  const releaseGameplayFocus = useCallback(() => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur()
     }
     gameplaySceneRef.current?.focus()
-  }
+  }, [])
 
   function beginLevel(levelNumber = appState.currentLevel) {
     const level = levelByNumber(levelNumber)
@@ -704,26 +652,26 @@ function App() {
       background: level.background,
       bubbles: createBubbleLayout(words),
       player: { x: 12, y: 76 },
-      energy: 35,
+      energy: INITIAL_LEVEL_ENERGY,
       feedback:
         words.length === 0
-          ? '球场还没有单词。家长先在右侧输入中文，系统会自动生成英文泡泡并加入词库。'
-          : '球场上同时只保留 3 个单词泡泡。点击泡泡听示范，再点麦克风让小朋友说。',
+          ? '球场还没有单词。请让家长加一个词。'
+          : '点一个泡泡，听一听，再点大麦克风。',
       startTime: Date.now(),
     })
     setAnswerDraft('')
     setSpeechError('')
     setFocusedBubbleId(null)
-    setParentWordDraft('')
-    setParentWordLoading(false)
-    setParentWordMessage('')
     setMicCountdown(null)
     setListeningBubbleId(null)
     setWordSpotlight(null)
+    setBubbleFeedback({})
+    setEnergyPulse(false)
+    setGoalCelebrating(false)
     goToScene('gameplay')
-    window.setTimeout(() => {
+    scheduleManagedTimeout(() => {
       releaseGameplayFocus()
-    }, 0)
+    }, GAMEPLAY_FOCUS_DELAY_MS)
   }
 
   function speakTeachingWord(word: WordEntry) {
@@ -754,174 +702,32 @@ function App() {
 
   function handleBubbleClick(bubble: BubbleState) {
     setFocusedBubbleId(bubble.id)
-    const visual = getWordVisual(bubble.word)
-    setWordSpotlight({
-      word: bubble.word,
-      imageUrl: createWordImage(bubble.word),
-      visual,
-    })
+    setWordSpotlight({ bubbleId: bubble.id })
     speakTeachingWord(bubble.word)
     setGameSession((previous) =>
       previous
         ? {
             ...previous,
             player: {
-              x: clamp(bubble.x - 6, 6, 94),
+              x: clamp(bubble.x - PLAYER_MOVE_STEP, 6, 94),
               y: clamp(bubble.y + 8, 10, 86),
             },
             feedback:
               bubble.word.english === bubble.word.chinese
-                ? `老师时间到：${bubble.word.english}。请先听示范，再点小麦克风让小朋友说。`
-                : `老师时间到：${bubble.word.english}，中文是${bubble.word.chinese}。请先听示范，再点小麦克风让小朋友说。`,
+                ? `${bubble.word.english}，听一听，再跟着说。`
+                : `${bubble.word.english}，是 ${bubble.word.chinese}。听一听，再跟着说。`,
           }
         : previous,
     )
-  }
-
-  async function addBubbleFromChinese() {
-    const keyword = parentWordDraft.trim()
-    if (!keyword) {
-      setParentWordMessage('先输入一个中文词。')
-      return
-    }
-
-    if (!gameSession) {
-      setParentWordMessage('请先进入闯关页。')
-      return
-    }
-
-    setParentWordLoading(true)
-    setParentWordMessage('正在生成英文单词...')
-
-    try {
-      const resolved = await resolveParentWord(
-        keyword,
-        appState.wordBank,
-        gameSession.level.difficulty,
-      )
-
-      if (!resolved) {
-        setParentWordMessage('生成英文失败了，请检查网络后再试一次。')
-        return
-      }
-
-      const nextBubbleId = `${resolved.word.id}-${crypto.randomUUID()}`
-      const nextBubble: BubbleState = {
-        id: nextBubbleId,
-        word: resolved.word,
-        x: 0,
-        y: 0,
-        status: 'pending',
-        attempts: 0,
-        createdOrder: 0,
-      }
-
-      updateAppState((previous) => {
-        const alreadySaved = previous.wordBank.some((word) => word.id === resolved.word.id)
-        return {
-          ...previous,
-          wordBank: alreadySaved ? previous.wordBank : [...previous.wordBank, resolved.word],
-          libraryProgress: previous.libraryProgress[resolved.word.id]
-            ? previous.libraryProgress
-            : {
-                ...previous.libraryProgress,
-                [resolved.word.id]: { seen: 0, correct: 0, wrong: 0 },
-              },
-        }
-      })
-
-      setGameSession((previous) => {
-        if (!previous) {
-          return previous
-        }
-
-        const nextCreatedOrder =
-          previous.bubbles.reduce(
-            (maxOrder, bubble) => Math.max(maxOrder, bubble.createdOrder),
-            -1,
-          ) + 1
-
-        const replaceIndex =
-          previous.bubbles.length < MAX_FIELD_BUBBLES
-            ? previous.bubbles.length
-            : previous.bubbles.reduce((oldestIndex, bubble, index, bubbles) =>
-                bubble.createdOrder < bubbles[oldestIndex].createdOrder
-                  ? index
-                  : oldestIndex,
-              0)
-
-        const fallbackPosition = getNextBubblePosition(previous.bubbles)
-        const replacedBubble = previous.bubbles[replaceIndex]
-        const bubbleWithPosition = {
-          ...nextBubble,
-          x: replacedBubble?.x ?? fallbackPosition.x,
-          y: replacedBubble?.y ?? fallbackPosition.y,
-          createdOrder: nextCreatedOrder,
-        }
-        const nextBubbles =
-          previous.bubbles.length < MAX_FIELD_BUBBLES
-            ? [...previous.bubbles, bubbleWithPosition]
-            : previous.bubbles.map((bubble, index) =>
-                index === replaceIndex ? bubbleWithPosition : bubble,
-              )
-
-        return {
-          ...previous,
-          bubbles: nextBubbles,
-          feedback:
-            resolved.source === 'existing'
-              ? `这个单词已经在词库里了，球场泡泡已切换成 ${resolved.word.english}。`
-              : `家长刚刚加入了新单词：${resolved.word.chinese}，球场泡泡已切换成 ${resolved.word.english}。`,
-        }
-      })
-
-      setWordSpotlight({
-        word: resolved.word,
-        imageUrl: createWordImage(resolved.word),
-        visual: getWordVisual(resolved.word),
-      })
-      setParentWordDraft('')
-      setParentWordMessage(
-        resolved.source === 'existing'
-          ? `已使用词库里的英文：${resolved.word.english}`
-          : `已生成英文泡泡：${resolved.word.english}，并补充到词库`,
-      )
-      setFocusedBubbleId(nextBubbleId)
-      releaseGameplayFocus()
-    } finally {
-      setParentWordLoading(false)
-    }
-  }
-
-  function movePlayer(direction: Direction) {
-    setGameSession((previous) => {
-      if (!previous) {
-        return previous
-      }
-
-      const delta =
-        direction === 'up'
-          ? { x: 0, y: -6 }
-          : direction === 'down'
-            ? { x: 0, y: 6 }
-            : direction === 'left'
-              ? { x: -6, y: 0 }
-              : { x: 6, y: 0 }
-
-      return {
-        ...previous,
-        player: {
-          x: clamp(previous.player.x + delta.x, 6, 94),
-          y: clamp(previous.player.y + delta.y, 10, 86),
-        },
-      }
-    })
   }
 
   function skipBubble() {
     if (!activeBubble) {
       return
     }
+
+    triggerBubbleFeedback(activeBubble.bubble.id, 'wrong')
+    pulseEnergy()
 
     setGameSession((previous) => {
       if (!previous) {
@@ -935,17 +741,20 @@ function App() {
             ? { ...bubble, status: 'skipped', attempts: Math.max(3, bubble.attempts) }
             : bubble,
         ),
-        energy: clamp(previous.energy - 5, 0, 100),
-        feedback: `${activeBubble.bubble.word.english} 已跳过，继续前进吧。`,
+        energy: clamp(previous.energy - SKIP_BUBBLE_ENERGY_COST, 0, 100),
+        feedback: `${activeBubble.bubble.word.english} 先跳过。`,
       }
     })
     setFocusedBubbleId((previous) =>
       previous === activeBubble.bubble.id ? null : previous,
     )
+    setWordSpotlight((previous) =>
+      previous?.bubbleId === activeBubble.bubble.id ? null : previous,
+    )
   }
 
   function finishLevel() {
-    if (!gameSession) {
+    if (!gameSession || goalCelebrating) {
       return
     }
 
@@ -962,19 +771,19 @@ function App() {
         previous
           ? {
               ...previous,
-              feedback: '先把所有单词泡泡踢飞，球门才会解锁。',
+              feedback: '先把泡泡都完成。',
             }
           : previous,
       )
       return
     }
 
-    if (distance > 24) {
+    if (distance > GOAL_SHOT_DISTANCE) {
       setGameSession((previous) =>
         previous
           ? {
               ...previous,
-              feedback: '再向球门跑近一点，再按空格或点击射门。',
+              feedback: '走近点，再点一次。',
             }
           : previous,
       )
@@ -982,7 +791,7 @@ function App() {
     }
 
     const durationSeconds = Math.max(
-      8,
+      MIN_LEVEL_DURATION_SECONDS,
       Math.round((Date.now() - gameSession.startTime) / 1000),
     )
     const correctCount = gameSession.bubbles.filter(
@@ -1009,71 +818,82 @@ function App() {
       wrongWords,
     }
 
-    setLastResult(result)
-    updateAppState((previous) => {
-      const uniqueCompleted = previous.completedLevels.includes(gameSession.level.id)
-        ? previous.completedLevels
-        : [...previous.completedLevels, gameSession.level.id]
-      const starsEarned = previous.completedLevels.includes(gameSession.level.id) ? 0 : 1
-      const unlockedBackgrounds: BackgroundId[] = ['sunny']
+    setGoalCelebrating(true)
+    pulseEnergy()
+    setGameSession((previous) =>
+      previous
+        ? {
+            ...previous,
+            feedback: '进球啦！',
+          }
+        : previous,
+    )
 
-      if (uniqueCompleted.length >= 3) {
-        unlockedBackgrounds.push('rainy')
-      }
-      if (uniqueCompleted.length >= 6) {
-        unlockedBackgrounds.push('starry')
-      }
+    finishResultTimerRef.current = window.setTimeout(() => {
+      setGoalCelebrating(false)
+      setLastResult(result)
+      updateAppState((previous) => {
+        const uniqueCompleted = previous.completedLevels.includes(gameSession.level.id)
+          ? previous.completedLevels
+          : [...previous.completedLevels, gameSession.level.id]
+        const starsEarned = previous.completedLevels.includes(gameSession.level.id) ? 0 : 1
+        const unlockedBackgrounds: BackgroundId[] = ['sunny']
 
-      const mergedWrongWords = [...previous.wrongWords]
-      wrongWords.forEach((word) => {
-        const existing = mergedWrongWords.find((item) => item.wordId === word.wordId)
-        if (existing) {
-          existing.count += word.count
-          existing.lastSeen = word.lastSeen
-        } else {
-          mergedWrongWords.push(word)
+        if (uniqueCompleted.length >= 3) {
+          unlockedBackgrounds.push('rainy')
+        }
+        if (uniqueCompleted.length >= 6) {
+          unlockedBackgrounds.push('starry')
+        }
+
+        const mergedWrongWords = [...previous.wrongWords]
+        wrongWords.forEach((word) => {
+          const existing = mergedWrongWords.find((item) => item.wordId === word.wordId)
+          if (existing) {
+            existing.count += word.count
+            existing.lastSeen = word.lastSeen
+          } else {
+            mergedWrongWords.push(word)
+          }
+        })
+
+        return {
+          ...previous,
+          scene: 'complete',
+          currentLevel: Math.min(previous.currentLevel + (starsEarned > 0 ? 1 : 0), levels.length),
+          completedLevels: uniqueCompleted,
+          stars: previous.stars + starsEarned,
+          unlockedBackgrounds,
+          usageTodayMinutes: previous.usageTodayMinutes + Math.max(1, Math.round(durationSeconds / 60)),
+          usageWeekMinutes: previous.usageWeekMinutes + Math.max(1, Math.round(durationSeconds / 60)),
+          wrongWords: mergedWrongWords.sort((left, right) => right.count - left.count).slice(0, 12),
+          levelHistory: [
+            {
+              id: crypto.randomUUID(),
+              levelId: gameSession.level.id,
+              accuracy,
+              durationSeconds,
+              starsEarned,
+              completedAt: new Date().toISOString(),
+              wrongWords: wrongWords.map((word) => word.english),
+            },
+            ...previous.levelHistory,
+          ].slice(0, 20),
+          libraryProgress: gameSession.bubbles.reduce((collection, bubble) => {
+            const current = collection[bubble.word.id] ?? { seen: 0, correct: 0, wrong: 0 }
+            collection[bubble.word.id] = {
+              seen: current.seen + 1,
+              correct: current.correct + (bubble.status === 'cleared' && bubble.attempts === 0 ? 1 : 0),
+              wrong: current.wrong + (bubble.attempts > 0 || bubble.status === 'skipped' ? 1 : 0),
+            }
+            return collection
+          }, { ...previous.libraryProgress }),
         }
       })
-
-      return {
-        ...previous,
-        scene: 'complete',
-        currentLevel: Math.min(previous.currentLevel + (starsEarned > 0 ? 1 : 0), levels.length),
-        completedLevels: uniqueCompleted,
-        stars: previous.stars + starsEarned,
-        unlockedBackgrounds,
-        usageTodayMinutes: previous.usageTodayMinutes + Math.max(1, Math.round(durationSeconds / 60)),
-        usageWeekMinutes: previous.usageWeekMinutes + Math.max(1, Math.round(durationSeconds / 60)),
-        wrongWords: mergedWrongWords.sort((left, right) => right.count - left.count).slice(0, 12),
-        levelHistory: [
-          {
-            id: crypto.randomUUID(),
-            levelId: gameSession.level.id,
-            accuracy,
-            durationSeconds,
-            starsEarned,
-            completedAt: new Date().toISOString(),
-            wrongWords: wrongWords.map((word) => word.english),
-          },
-          ...previous.levelHistory,
-        ].slice(0, 20),
-        libraryProgress: gameSession.bubbles.reduce((collection, bubble) => {
-          const current = collection[bubble.word.id] ?? { seen: 0, correct: 0, wrong: 0 }
-          collection[bubble.word.id] = {
-            seen: current.seen + 1,
-            correct: current.correct + (bubble.status === 'cleared' && bubble.attempts === 0 ? 1 : 0),
-            wrong: current.wrong + (bubble.attempts > 0 || bubble.status === 'skipped' ? 1 : 0),
-          }
-          return collection
-        }, { ...previous.libraryProgress }),
-      }
-    })
-    setGameSession(null)
+      setGameSession(null)
+      finishResultTimerRef.current = null
+    }, GOAL_CELEBRATION_DURATION_MS)
   }
-
-  useEffect(() => {
-    finishLevelRef.current = finishLevel
-  })
 
   function openProtectedScene(scene: Scene) {
     if (!appState.settings.parentPassword) {
@@ -1133,6 +953,8 @@ function App() {
     isCorrect: boolean,
     feedbackOverride?: string,
   ) {
+    triggerBubbleFeedback(bubble.id, isCorrect ? 'correct' : 'wrong')
+    pulseEnergy()
     setGameSession((previous) => {
       if (!previous) {
         return previous
@@ -1151,18 +973,24 @@ function App() {
       return {
         ...previous,
         bubbles: nextBubbles,
-        energy: clamp(previous.energy + (isCorrect ? 10 : 0), 0, 100),
+        // 答错与跳过统一扣能量，避免孩子通过连续试错绕过体力成本。
+        energy: clamp(
+          previous.energy + (isCorrect ? CORRECT_ANSWER_ENERGY_BONUS : -WRONG_ANSWER_ENERGY_COST),
+          0,
+          100,
+        ),
         feedback:
           feedbackOverride ??
           (isCorrect
-            ? `太棒啦！${bubble.word.english} 已被踢飞，去找下一个泡泡。`
-            : `再试试！${bubble.word.chinese} 的英文是 ${bubble.word.english}。`),
+            ? `答对啦！${bubble.word.english}`
+            : `再试试。${bubble.word.chinese} 是 ${bubble.word.english}。`),
       }
     })
 
     setAnswerDraft('')
     if (isCorrect) {
       setFocusedBubbleId((previousFocus) => (previousFocus === bubble.id ? null : previousFocus))
+      setWordSpotlight((previous) => (previous?.bubbleId === bubble.id ? null : previous))
     }
   }
 
@@ -1230,7 +1058,7 @@ function App() {
 
         const rms = Math.sqrt(sumSquares / samples.length)
         maxVolume = Math.max(maxVolume, rms)
-        if (rms > 0.05) {
+        if (rms > VOICE_FALLBACK_RMS_THRESHOLD) {
           heardFrames += 1
         }
 
@@ -1240,17 +1068,40 @@ function App() {
       monitorVolume()
 
       listeningTimerRef.current = window.setTimeout(() => {
-        const heardVoice = heardFrames >= 8 || maxVolume > 0.075
+        const heardVoice =
+          heardFrames >= VOICE_FALLBACK_MIN_HEARD_FRAMES || maxVolume > VOICE_FALLBACK_PEAK_THRESHOLD
         stopVoicePractice()
         setListening(false)
         setMicCountdown(null)
         setListeningBubbleId(null)
 
         if (heardVoice) {
+          // 纯本地音量分析只能确认“开口了”，不能确认“读对了”，这里补一层文本确认避免永远判对。
+          const confirmedAnswer = window.prompt(
+            `已检测到发声。当前处于本地降级模式，请输入刚才读出的英文以确认是否正确：`,
+            answerDraftRef.current.trim() || bubble.word.english,
+          )
+
+          if (!confirmedAnswer?.trim()) {
+            setSpeechError('')
+            setGameSession((previous) =>
+              previous
+                ? {
+                    ...previous,
+                    feedback: `已经听到发声，但还没有确认读的是不是 ${bubble.word.english}。请再试一次，或由家长帮忙输入确认。`,
+                  }
+                : previous,
+            )
+            return
+          }
+
+          const isCorrect = isAnswerCorrect(confirmedAnswer, bubble.word.english)
           handleBubbleAttemptResult(
             bubble,
-            true,
-            `已经听到小朋友跟读 ${bubble.word.english}，先继续往前踢球吧。`,
+            isCorrect,
+            isCorrect
+              ? `本地降级模式已确认 ${bubble.word.english} 读对了，继续前进吧。`
+              : `本地降级模式下确认结果不匹配，再试试！${bubble.word.chinese} 的英文是 ${bubble.word.english}。`,
           )
           return
         }
@@ -1264,7 +1115,7 @@ function App() {
               }
             : previous,
         )
-      }, 3000)
+      }, VOICE_LISTENING_WINDOW_MS)
     } catch {
       stopVoicePractice()
       setListening(false)
@@ -1279,7 +1130,7 @@ function App() {
     const Recognition = window.SpeechRecognition ?? window.webkitSpeechRecognition
     const bubble = targetBubble ?? activeBubbleRef.current?.bubble
     if (!bubble) {
-      setSpeechError('先靠近一个单词泡泡，再点击麦克风。')
+      setSpeechError('先点一个泡泡。')
       return
     }
 
@@ -1296,10 +1147,10 @@ function App() {
         ? {
             ...previous,
             player: {
-              x: clamp(bubble.x - 6, 6, 94),
+              x: clamp(bubble.x - PLAYER_MOVE_STEP, 6, 94),
               y: clamp(bubble.y + 8, 10, 86),
             },
-            feedback: `准备开始：给小朋友 3 秒钟准备时间，然后对着 ${bubble.word.english} 说出来。`,
+            feedback: `准备好了吗？对着 ${bubble.word.english} 说出来。`,
           }
         : previous,
     )
@@ -1355,14 +1206,14 @@ function App() {
         previous
           ? {
               ...previous,
-              feedback: `开始说吧，系统会给小朋友 3 秒钟完整读出 ${bubble.word.english}。`,
+              feedback: `开始说吧：${bubble.word.english}`,
             }
           : previous,
       )
       recognition.start()
       listeningTimerRef.current = window.setTimeout(() => {
         recognition.stop()
-      }, 3000)
+      }, VOICE_LISTENING_WINDOW_MS)
     }
 
     countdownTimerRef.current = window.setTimeout(() => {
@@ -1371,9 +1222,9 @@ function App() {
         setMicCountdown(1)
         countdownTimerRef.current = window.setTimeout(() => {
           startRecognition()
-        }, 1000)
-      }, 1000)
-    }, 1000)
+        }, VOICE_COUNTDOWN_STEP_MS)
+      }, VOICE_COUNTDOWN_STEP_MS)
+    }, VOICE_COUNTDOWN_STEP_MS)
   }
 
   function validateService(kind: 'volcengine' | 'feishu') {
@@ -1389,7 +1240,7 @@ function App() {
       },
     }))
 
-    window.setTimeout(() => {
+    scheduleManagedTimeout(() => {
       updateAppState((previous) => {
         const fields =
           kind === 'volcengine'
@@ -1440,7 +1291,7 @@ function App() {
       },
     }))
 
-    window.setTimeout(() => {
+    scheduleManagedTimeout(() => {
       updateAppState((previous) => ({
         ...previous,
         apiConfig: {
@@ -1585,41 +1436,96 @@ function App() {
     setGameSession(null)
     setLastResult(null)
     setAnswerDraft('')
-    setParentWordDraft('')
-    setParentWordLoading(false)
-    setParentWordMessage('')
     setWordSpotlight(null)
     setWorkshopHistory([])
     setSelectedBlockId(null)
     setAppState(resetState)
   }
 
-  const trendValues = appState.levelHistory
-    .slice(0, 7)
-    .map((entry) => Math.max(45, Math.round(entry.accuracy * 100)))
-    .reverse()
-  const weeklyTrend =
-    trendValues.length >= 4 ? trendValues : [62, 66, 70, 68, 74, 79, 86]
-  const trendPath = weeklyTrend
-    .map((value, index) => `${index === 0 ? 'M' : 'L'} ${index * 80} ${150 - value}`)
-    .join(' ')
+  const trendValues = useMemo(
+    () =>
+      appState.levelHistory
+        .slice(0, 7)
+        .map((entry) => Math.max(45, Math.round(entry.accuracy * 100)))
+        .reverse(),
+    [appState.levelHistory],
+  )
+  const weeklyTrend = useMemo(
+    () => (trendValues.length >= 4 ? trendValues : [62, 66, 70, 68, 74, 79, 86]),
+    [trendValues],
+  )
+  const trendPath = useMemo(
+    () =>
+      weeklyTrend
+        .map((value, index) => `${index === 0 ? 'M' : 'L'} ${index * 80} ${150 - value}`)
+        .join(' '),
+    [weeklyTrend],
+  )
 
-  const categoryStats = appState.wordBank
-    .filter((word) => word.enabled)
-    .reduce<Record<string, number>>((result, word) => {
-      const entry = appState.libraryProgress[word.id]
-      const score = entry ? entry.correct + 1 : 1
-      result[word.category] = (result[word.category] ?? 0) + score
-      return result
-    }, {})
-  const totalCategoryScore = Object.values(categoryStats).reduce((sum, value) => sum + value, 0) || 1
+  const categoryStats = useMemo(
+    () =>
+      appState.wordBank
+        .filter((word) => word.enabled)
+        .reduce<Record<string, number>>((result, word) => {
+          const entry = appState.libraryProgress[word.id]
+          const score = entry ? entry.correct + 1 : 1
+          result[word.category] = (result[word.category] ?? 0) + score
+          return result
+        }, {}),
+    [appState.libraryProgress, appState.wordBank],
+  )
+  const totalCategoryScore =
+    useMemo(() => Object.values(categoryStats).reduce((sum, value) => sum + value, 0) || 1, [categoryStats])
   const categoryColors = ['#197fe6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444']
-  const categoryEntries = Object.entries(categoryStats)
+  const categoryEntries = useMemo(() => Object.entries(categoryStats), [categoryStats])
 
-  const unlockedGoal =
-    gameSession && gameSession.bubbles.length > 0
-      ? gameSession.bubbles.every((bubble) => bubble.status !== 'pending')
-      : false
+  const unlockedGoal = useMemo(
+    () =>
+      gameSession && gameSession.bubbles.length > 0
+        ? gameSession.bubbles.every((bubble) => bubble.status !== 'pending')
+        : false,
+    [gameSession],
+  )
+  const clearedBubbleCount = useMemo(
+    () => gameSession?.bubbles.filter((bubble) => bubble.status !== 'pending').length ?? 0,
+    [gameSession],
+  )
+  const currentLevelStars = useMemo(
+    () => appState.completedLevels.filter((levelId) => levelId === currentLevel.id).length,
+    [appState.completedLevels, currentLevel.id],
+  )
+
+  function handleCharacterSelect(characterId: CharacterId) {
+    updateAppState((previous) => ({
+      ...previous,
+      selectedCharacter: characterId,
+    }))
+  }
+
+  function startAdventure() {
+    if (!appState.selectedCharacter) {
+      return
+    }
+
+    updateAppState((previous) => ({
+      ...previous,
+      scene: 'dashboard',
+    }))
+  }
+
+  function handleGameplayPrimaryAction() {
+    if (unlockedGoal) {
+      finishLevel()
+      return
+    }
+
+    if (activeBubble) {
+      startListening(activeBubble.bubble)
+      return
+    }
+
+    setSpeechError('先点一个泡泡。')
+  }
 
   return (
     <div className="app-shell">
@@ -1691,7 +1597,7 @@ function App() {
           <div className="section-header">
             <div>
               <span className="eyebrow">首次使用</span>
-              <h2>选择你的冒险角色</h2>
+              <h2>选一个朋友</h2>
             </div>
             <button className="ghost-button" onClick={() => goToScene('welcome')}>
               返回首页
@@ -1704,13 +1610,7 @@ function App() {
                 className={`character-card ${
                   appState.selectedCharacter === character.id ? 'is-selected' : ''
                 }`}
-                onClick={() =>
-                  updateAppState((previous) => ({
-                    ...previous,
-                    selectedCharacter: character.id as CharacterId,
-                    scene: 'dashboard',
-                  }))
-                }
+                onClick={() => handleCharacterSelect(character.id as CharacterId)}
               >
                 <div className="character-emoji" style={{ background: character.accent }}>
                   {character.emoji}
@@ -1720,6 +1620,15 @@ function App() {
                 <p>{character.description}</p>
               </button>
             ))}
+          </div>
+          <div className="character-launch">
+            <button
+              className="primary-button large character-start-button"
+              disabled={!appState.selectedCharacter}
+              onClick={startAdventure}
+            >
+              开始冒险
+            </button>
           </div>
         </section>
       )}
@@ -1735,61 +1644,49 @@ function App() {
               </div>
             </div>
             <div className="topbar-actions">
-              <button className="ghost-button" onClick={() => openProtectedScene('parent')}>
-                家长中心
+              <button className="icon-corner-button" onClick={() => openProtectedScene('parent')} aria-label="家长中心">
+                <GearIcon />
               </button>
               <button className="ghost-button" onClick={() => goToScene('api')}>
                 API 配置
               </button>
-              <div className="star-chip">⭐ x {appState.stars}</div>
+              <div className="star-chip">
+                <StarIcon />
+                <span>{appState.stars}</span>
+              </div>
             </div>
           </header>
           <div className="dashboard-layout">
-            <section className="map-panel">
-              <div className="map-sky" />
-              <svg className="map-path" viewBox="0 0 1000 620" preserveAspectRatio="none">
-                <path
-                  d="M 90 530 Q 230 520 310 410 T 480 320 T 700 190 T 910 80"
-                  fill="none"
-                  stroke="#6af425"
-                  strokeWidth="10"
-                  strokeDasharray="10 12"
-                />
-              </svg>
-              <div className="level-map">
-                {levels.map((level, index) => {
+            <section className="map-panel card-map-panel">
+              <div className="card-level-list" role="list">
+                {levels.map((level) => {
                   const completed = appState.completedLevels.includes(level.id)
                   const locked = level.number > Math.max(appState.currentLevel, 1)
                   const current = level.number === currentLevel.number
-                  const positions = [
-                    { left: '8%', top: '72%' },
-                    { left: '20%', top: '62%' },
-                    { left: '30%', top: '48%' },
-                    { left: '44%', top: '38%' },
-                    { left: '58%', top: '31%' },
-                    { left: '68%', top: '45%' },
-                    { left: '78%', top: '30%' },
-                    { left: '88%', top: '18%' },
-                    { left: '70%', top: '17%' },
-                    { left: '52%', top: '14%' },
-                    { left: '37%', top: '19%' },
-                    { left: '22%', top: '24%' },
-                    { left: '12%', top: '37%' },
-                    { left: '25%', top: '9%' },
-                    { left: '8%', top: '17%' },
-                  ][index]
 
                   return (
                     <button
                       key={level.id}
-                      className={`level-node ${completed ? 'is-complete' : ''} ${
+                      className={`level-card ${completed ? 'is-complete' : ''} ${
                         current ? 'is-current' : ''
                       } ${locked ? 'is-locked' : ''}`}
-                      style={positions}
                       onClick={() => !locked && beginLevel(level.number)}
+                      disabled={locked}
                     >
-                      <span>{completed ? '★' : locked ? '🔒' : '▶'}</span>
-                      <small>{level.id}</small>
+                      <div className="level-card-icon">{getLevelBadgeEmoji(level)}</div>
+                      <div className="level-card-copy">
+                        <strong>{level.title}</strong>
+                        <span>{level.id}</span>
+                      </div>
+                      <div className="level-card-meta">
+                        <div className="level-stars">
+                          <StarIcon />
+                          <span>{completed ? 1 : current ? currentLevelStars : 0}</span>
+                        </div>
+                        <span className="level-state-mark" aria-hidden="true">
+                          {completed ? '✓' : locked ? '🔒' : '▶'}
+                        </span>
+                      </div>
                     </button>
                   )
                 })}
@@ -1836,80 +1733,70 @@ function App() {
           ref={gameplaySceneRef}
           tabIndex={-1}
         >
-          <div className="hud-bar">
-            <div className="hud-chip">{gameSession.level.id}</div>
-            <div className="hud-progress">
-              <strong>
-                {gameSession.bubbles.filter((bubble) => bubble.status !== 'pending').length}/
-                {gameSession.bubbles.length}
-              </strong>
-              <span>已踢飞单词数</span>
-            </div>
-            <div className="hud-energy">
-              <span>能量</span>
-              <div className="energy-track">
-                <div className="energy-fill" style={{ height: `${gameSession.energy}%` }} />
+          <div className="gameplay-topbar">
+            <div className="hud-bar compact">
+              <div className="hud-icon-chip" aria-label={`星星 ${appState.stars}`}>
+                <StarIcon />
+                <strong>{appState.stars}</strong>
+              </div>
+              <div className={`hud-icon-chip heart-chip ${energyPulse ? 'is-bouncing' : ''}`} aria-label={`能量 ${gameSession.energy}`}>
+                <HeartIcon />
+                <strong>{Math.max(1, Math.ceil(gameSession.energy / 20))}</strong>
               </div>
             </div>
+            <button className="icon-corner-button gameplay-parent-button" onClick={() => openProtectedScene('parent')} aria-label="家长中心">
+              <GearIcon />
+            </button>
           </div>
           <div className="stadium-layout">
             <div className="field-shell">
-              {wordSpotlight && (
+              {spotlightCard && (
                 <div
                   className="field-spotlight"
-                  style={{ '--spotlight-accent': wordSpotlight.visual.accent } as React.CSSProperties}
+                  style={{ '--spotlight-accent': spotlightCard.visual.accent } as React.CSSProperties}
                 >
                   <img
-                    src={wordSpotlight.imageUrl}
-                    alt={wordSpotlight.word.english}
+                    src={spotlightCard.imageUrl}
+                    alt={spotlightCard.word.english}
                     className="field-spotlight-image"
                   />
                   <div className="field-spotlight-copy">
-                    <strong>{wordSpotlight.word.english}</strong>
-                    <span>{wordSpotlight.word.chinese}</span>
+                    <strong>{spotlightCard.word.english}</strong>
+                    <span>{spotlightCard.word.chinese}</span>
                   </div>
                 </div>
               )}
-              <div className={`goal ${unlockedGoal ? 'is-open' : ''}`} style={{ left: '50%', top: '11%' }}>
+              <div
+                className={`goal ${unlockedGoal ? 'is-open' : ''} ${goalCelebrating ? 'is-celebrating' : ''}`}
+                style={{ left: '50%', top: '11%' }}
+              >
                 <span className="goal-frame goal-top" />
                 <span className="goal-frame goal-left" />
                 <span className="goal-frame goal-right" />
                 <span className="goal-net" />
+                {goalCelebrating && (
+                  <>
+                    <span className="goal-firework firework-left" />
+                    <span className="goal-firework firework-right" />
+                    <span className="goal-confetti confetti-left" />
+                    <span className="goal-confetti confetti-right" />
+                  </>
+                )}
               </div>
               {gameSession.bubbles.map((bubble) => {
-                const near =
-                  Math.hypot(gameSession.player.x - bubble.x, gameSession.player.y - bubble.y) <= 16
                 return (
-                  <div key={bubble.id}>
-                    <button
-                      className={`word-bubble ${bubble.status} ${near ? 'is-near' : ''}`}
-                      style={{ left: `${bubble.x}%`, top: `${bubble.y}%` }}
-                      onClick={() => handleBubbleClick(bubble)}
-                    >
-                      <span>{bubble.word.english}</span>
-                      <small>{bubble.word.chinese}</small>
-                    </button>
-                    {near && bubble.status === 'pending' && (
-                      <button
-                        className={`bubble-mic ${listening && focusedBubbleId === bubble.id ? 'is-listening' : ''}`}
-                        style={{ left: `${bubble.x + 7}%`, top: `${bubble.y - 8}%` }}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          startListening(bubble)
-                        }}
-                        aria-label={`录音 ${bubble.word.english}`}
-                        title={`录音 ${bubble.word.english}`}
-                      >
-                        <span>
-                          {micCountdown !== null && listeningBubbleId === bubble.id
-                            ? micCountdown
-                            : listening && focusedBubbleId === bubble.id
-                              ? '🎙️'
-                              : '🎤'}
-                        </span>
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    key={bubble.id}
+                    className={`word-bubble ${bubble.status} ${
+                      focusedBubbleId === bubble.id ? 'is-focused' : ''
+                    } ${bubbleFeedback[bubble.id] ? `is-${bubbleFeedback[bubble.id]}` : ''}`}
+                    style={{ left: `${bubble.x}%`, top: `${bubble.y}%` }}
+                    onClick={() => handleBubbleClick(bubble)}
+                  >
+                    <span>{bubble.word.english}</span>
+                    <small>{bubble.word.chinese}</small>
+                    <span className="bubble-burst-particles" aria-hidden="true" />
+                  </button>
                 )
               })}
               <div
@@ -1933,113 +1820,45 @@ function App() {
                 <div className="ball-shadow">⚽</div>
               </div>
             </div>
-            <aside className="coach-panel">
-              <div className="info-card parent-console-card">
-                <span className="eyebrow">家长输入</span>
-                <div className="parent-console-row">
-                  <input
-                    ref={parentWordInputRef}
-                    value={parentWordDraft}
-                    onChange={(event) => setParentWordDraft(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' && !parentWordLoading) {
-                        void addBubbleFromChinese()
-                      }
-                    }}
-                    placeholder="中文词，例如：熊猫"
-                  />
-                  <button
-                    className="parent-add-button"
-                    onClick={() => void addBubbleFromChinese()}
-                    aria-label="生成泡泡"
-                    disabled={parentWordLoading}
-                  >
-                    <span>{parentWordLoading ? '⏳' : '✨'}</span>
-                  </button>
-                </div>
-                {parentWordMessage && <p className="helper-text">{parentWordMessage}</p>}
-              </div>
-              <div className="info-card">
-                <span className="eyebrow">当前挑战</span>
-                {gameSession.bubbles.length === 0 ? (
-                  <>
-                    <h3>等待家长加词</h3>
-                    <p>右侧输入中文后，系统会自动翻译成英文泡泡并存进词库。</p>
-                  </>
-                ) : activeBubble ? (
-                  <>
-                    <h3>{activeBubble.bubble.word.english}</h3>
-                    <p>{activeBubble.bubble.word.chinese}</p>
-                    <div className="meta-row">
-                      <span>距离：{Math.round(activeBubble.distance)}</span>
-                      <span>尝试：{activeBubble.bubble.attempts}/3</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <h3>球门已解锁</h3>
-                    <p>冲刺到球门前，点击射门完成本关。</p>
-                  </>
-                )}
-              </div>
-              <div className="kid-action-hint">
-                <div className="kid-action-chip">
-                  <span className="kid-action-icon">🔊</span>
-                  <small>点泡泡听示范</small>
-                </div>
-                <div className="kid-action-chip">
-                  <span className="kid-action-icon">🎤</span>
-                  <small>点麦克风说话</small>
-                </div>
-              </div>
-              {activeBubble && activeBubble.bubble.attempts >= 3 && (
-                <button className="skip-icon-button" onClick={skipBubble} aria-label="跳过单词">
-                  <span>⏭️</span>
-                </button>
+          </div>
+          <div className="gameplay-feedback-strip">
+            <div className="info-card compact child-feedback-card">
+              <strong>{gameSession.level.id}</strong>
+              <p>{gameSession.feedback}</p>
+              <span>
+                {clearedBubbleCount}/{gameSession.bubbles.length}
+              </span>
+            </div>
+            {speechError && <p className="warning-text gameplay-warning">{speechError}</p>}
+          </div>
+          <div className="bottom-action-bar">
+            <button
+              className={`bottom-icon-button small ${activeBubble && activeBubble.bubble.attempts >= 3 ? 'show-skip' : ''}`}
+              onClick={activeBubble && activeBubble.bubble.attempts >= 3 ? skipBubble : () => spotlightCard && speakTeachingWord(spotlightCard.word)}
+              aria-label={activeBubble && activeBubble.bubble.attempts >= 3 ? '跳过' : '帮助'}
+            >
+              {activeBubble && activeBubble.bubble.attempts >= 3 ? '⏭️' : <HelpIcon />}
+            </button>
+            <button
+              className={`bottom-primary-button ${listening ? 'is-listening' : ''}`}
+              onClick={handleGameplayPrimaryAction}
+              aria-label={unlockedGoal ? '射门' : '录音'}
+            >
+              {micCountdown !== null && listeningBubbleId ? (
+                <span className="countdown-number">{micCountdown}</span>
+              ) : unlockedGoal ? (
+                <span>🥅</span>
+              ) : (
+                <MicIcon />
               )}
-              {speechError && <p className="warning-text">{speechError}</p>}
-              <div className="info-card compact">
-                <strong>教练提示</strong>
-                <p>{gameSession.feedback}</p>
-              </div>
-              <div className="info-card compact word-spotlight-card">
-                <strong>单词图片卡</strong>
-                {wordSpotlight ? (
-                  <>
-                    <div
-                      className="spotlight-image-shell"
-                      style={{ '--spotlight-accent': wordSpotlight.visual.accent } as React.CSSProperties}
-                    >
-                      <img src={wordSpotlight.imageUrl} alt={wordSpotlight.word.english} className="spotlight-image" />
-                    </div>
-                    <div className="spotlight-caption">
-                      <h4>{wordSpotlight.word.english}</h4>
-                      <p>{wordSpotlight.word.chinese}</p>
-                    </div>
-                    <button
-                      className="icon-audio-button"
-                      onClick={() => speakTeachingWord(wordSpotlight.word)}
-                      aria-label="再听一遍"
-                    >
-                      <span>🔊</span>
-                    </button>
-                  </>
-                ) : (
-                  <p>点击任意单词泡泡，这里会自动生成一张图片卡，并读给小朋友听。</p>
-                )}
-              </div>
-              <div className="control-pad">
-                <button onClick={() => movePlayer('up')}>↑</button>
-                <div>
-                  <button onClick={() => movePlayer('left')}>←</button>
-                  <button onClick={() => movePlayer('down')}>↓</button>
-                  <button onClick={() => movePlayer('right')}>→</button>
-                </div>
-              </div>
-              <button className="primary-button large" onClick={finishLevel}>
-                射门（空格）
-              </button>
-            </aside>
+            </button>
+            <button
+              className="bottom-icon-button small"
+              onClick={() => openProtectedScene('parent')}
+              aria-label="家长中心"
+            >
+              <GearIcon />
+            </button>
           </div>
         </section>
       )}
