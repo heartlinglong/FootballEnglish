@@ -1,4 +1,3 @@
-import { starterWords } from '../data/gameData'
 import type { ApiConfig, AppState, ParentSettings } from '../types'
 
 const APP_STATE_KEY = 'football-english-town-state'
@@ -38,9 +37,8 @@ export function createDefaultAppState(): AppState {
     unlockedBackgrounds: ['sunny'],
     settings: defaultSettings,
     apiConfig: defaultApiConfig,
-    libraryProgress: Object.fromEntries(
-      starterWords.map((word) => [word.id, { seen: 0, correct: 0, wrong: 0 }]),
-    ),
+    wordBank: [],
+    libraryProgress: {},
     wrongWords: [],
     levelHistory: [],
     workshopBlocks: [],
@@ -77,6 +75,7 @@ export function loadAppState() {
         ...defaults.settings,
         ...(parsedState.settings ?? {}),
       },
+      wordBank: Array.isArray(parsedState.wordBank) ? parsedState.wordBank : defaults.wordBank,
       apiConfig: {
         ...defaults.apiConfig,
         ...parsedApi,

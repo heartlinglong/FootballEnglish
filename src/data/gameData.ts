@@ -14,6 +14,8 @@ export const characters: CharacterOption[] = [
     emoji: '🐻',
     accent: '#f4af25',
     description: '稳定控球，适合第一次进入足球英语小镇的小朋友。',
+    imageUrl:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAooMQ3vLQUfT38smOZJEON4vYQxhvc2lYPRr2GEIHFePCbJ3TzBNS_qpNM0or4ybPw49n4pbwu-EYd9L2C2tIpqC8lRnLnpscRBb-5XLL5jhfx0iaHUYS2IEvv1L6z6X-qgi079fdCMG-z1OMHFIOrtqJi0Wyjzxk5vtJkwxcKVRYyLB1D9RhkCt7gMVjW0KwjH3j51CGMvBNrvku4Qc4QJ1rFawRjF2FKlofjuPu263TTIGv1YAl0O7bY01xspbboY-jZfJqpd2s',
   },
   {
     id: 'rabbit',
@@ -22,6 +24,8 @@ export const characters: CharacterOption[] = [
     emoji: '🐰',
     accent: '#ff7aa2',
     description: '移动轻快，最适合喜欢节奏和速度的冒险家。',
+    imageUrl:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBvptM30ZdHIruAsWqa_iufwOs1W_8S8vu-pRwUluYEIHoQGmAXjPV-uNb5khtqpVoUT_0q_iI1UmCUjyW6orivZptbjawBH8pZZ_GaJUmPqjJOCp0Gjf_S9J6NzC05UQCXY_JBydCplDBJcxD-daMpolwCr6NhjIgPoEXGuyy38gTkFwb7RgPg1mJHY9HySOcimdznftS1fAgnC5YjS4aVrqHdRi_OUtyux-Tu2MMGm685Ifyw9S1YTyrnUL4VnXJsroKi2cgHrIE',
   },
   {
     id: 'cat',
@@ -30,6 +34,8 @@ export const characters: CharacterOption[] = [
     emoji: '🐱',
     accent: '#61c6ff',
     description: '反应敏捷，专门挑战高正确率和连击表现。',
+    imageUrl:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuC6M9cBK4BR4OUQo8Hsrw0yTaqi0HdfrM5feP71RvdJEKcv3svALIf-axFic5USyGiSqcxlgbzIdn4QH3Lul-IrrQBIcI_JGqVk1wiXlrydX5fHNiylX4HyF4OmhSxzzIHYnArYGFCOj245Ay9i5U4uhEMsq1R8_wEZaqglJuylQTYTQ1RbgWAf3MKp0DcmWcNrO3t4waE6oK2meOSo6ibi4JpD0zL0YHtwTtoBnOLRv-6yH6Bxxmkv6Vg56zZdctIVvE8SzkQgxTU',
   },
 ]
 
@@ -108,6 +114,25 @@ export const starterWords: WordEntry[] = [
   { id: 'how-do-you-go', english: 'How do you go to school?', chinese: '你怎么去学校？', level: '高级', category: '对话', exampleSentence: 'How do you go to school?', enabled: true },
   { id: 'i-see-snow', english: 'I can see snow on the field.', chinese: '我能看到球场上的雪。', level: '高级', category: '对话', exampleSentence: 'I can see snow on the field.', enabled: true },
   { id: 'can-you-build', english: 'Can you build a house with me?', chinese: '你能和我一起搭房子吗？', level: '高级', category: '对话', exampleSentence: 'Can you build a house with me?', enabled: true },
+]
+
+export const parentInstantDictionary = [
+  { chinese: '鸭子', english: 'duck', category: '动物', aliases: ['鸭子', '小鸭', '鸭'] },
+  { chinese: '熊猫', english: 'panda', category: '动物', aliases: ['熊猫'] },
+  { chinese: '小狗', english: 'dog', category: '动物', aliases: ['小狗', '狗狗', '狗'] },
+  { chinese: '小猫', english: 'cat', category: '动物', aliases: ['小猫', '猫咪', '猫'] },
+  { chinese: '小鹅', english: 'goose', category: '动物', aliases: ['小鹅', '鹅'] },
+  { chinese: '公交车', english: 'bus', category: '交通', aliases: ['公交车', '巴士', '公交'] },
+  { chinese: '出租车', english: 'taxi', category: '交通', aliases: ['出租车', '计程车'] },
+  { chinese: '小汽车', english: 'car', category: '交通', aliases: ['小汽车', '汽车', '车'] },
+  { chinese: '飞机', english: 'plane', category: '交通', aliases: ['飞机'] },
+  { chinese: '火车', english: 'train', category: '交通', aliases: ['火车'] },
+  { chinese: '地铁', english: 'subway', category: '交通', aliases: ['地铁'] },
+  { chinese: '沙发', english: 'sofa', category: '物品', aliases: ['沙发'] },
+  { chinese: '计划本', english: 'notebook', category: '物品', aliases: ['计划本', '笔记本', '本子'] },
+  { chinese: '雪', english: 'snow', category: '自然', aliases: ['雪', '下雪'] },
+  { chinese: '房子', english: 'house', category: '建筑', aliases: ['房子', '小房子'] },
+  { chinese: '足球', english: 'football', category: '运动', aliases: ['足球'] },
 ]
 
 export const workshopPalette: Array<Omit<WorkshopBlock, 'id' | 'x' | 'y'>> = [

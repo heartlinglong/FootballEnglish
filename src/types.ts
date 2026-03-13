@@ -45,6 +45,7 @@ export type CharacterOption = {
   emoji: string
   accent: string
   description: string
+  imageUrl?: string
 }
 
 export type LibraryProgressEntry = {
@@ -154,6 +155,7 @@ export type AppState = {
   unlockedBackgrounds: BackgroundId[]
   settings: ParentSettings
   apiConfig: ApiConfig
+  wordBank: WordEntry[]
   libraryProgress: Record<string, LibraryProgressEntry>
   wrongWords: WrongWordEntry[]
   levelHistory: LevelHistoryEntry[]

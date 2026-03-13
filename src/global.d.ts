@@ -24,4 +24,5 @@ interface BrowserSpeechRecognitionEvent {
 interface Window {
   webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor
   SpeechRecognition?: BrowserSpeechRecognitionConstructor
+  webkitAudioContext?: typeof AudioContext
 }
